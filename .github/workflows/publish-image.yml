@@ -1,0 +1,49 @@
+name: Publish devcontainer image
+
+# Запускаємо тільки коли змінюється визначення devcontainer-а або вручну.
+# Перебудова на кожен push — зайві витрати реєстру і CI-хвилин.
+on:
+  push:
+    branches: [main]
+    paths:
+      - .devcontainer/**
+  workflow_dispatch:
+
+# packages: write — дозвіл пушити образ у ghcr.io через GITHUB_TOKEN.
+# contents: read — стандартний дозвіл для checkout.
+permissions:
+  packages: write
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Логінимось у GitHub Container Registry через вбудований GITHUB_TOKEN.
+      # Окремих секретів не потрібно — токен доступний автоматично у будь-якому workflow.
+      - name: Log in to ghcr.io
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Контекст збірки — .devcontainer/, бо Dockerfile і всі файли які він
+      # COPY-ює (.clang-format, .clangd і т.д.) лежать саме там.
+      #
+      # Build args відповідають тому, що GitHub Actions runner надає:
+      # USER=runner, HOME=/home/runner. devcontainers/ci у build.yml
+      # підставляє ті самі значення через ${localEnv:USER} / ${localEnv:HOME}.
+      - name: Build and push devcontainer image
+        uses: docker/build-push-action@v5
+        with:
+          context: .devcontainer
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/cpp-miltech-devcontainer:latest
+          build-args: |
+            CONTAINER_USER=runner
+            WORKSPACE_FOLDER=/home/runner/${{ github.event.repository.name }}

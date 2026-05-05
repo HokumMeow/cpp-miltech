@@ -16,6 +16,10 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  packages: read
+  contents: read
+
 jobs:
   build:
     # ubuntu-latest - загальний GitHub runner з preinstalled Docker і
@@ -28,6 +32,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Логінимось у ghcr.io щоб витягнути попередньо зібраний образ.
+      # Без цього кроку pull падає навіть для публічного пакету на першому
+      # запиті у job-і.
+      - name: Log in to ghcr.io
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       # devcontainers/ci - офіційний action від Microsoft, який запускає
       # build всередині devcontainer-а. Послідовність:
       #
@@ -35,7 +49,8 @@ jobs:
       # 2. Підставляє ${localEnv:USER} і ${localEnv:HOME} зі змінних
       #    середовища runner-а (на ubuntu-latest це `runner` і
       #    `/home/runner`).
-      # 3. Будує Docker image з Dockerfile, передаючи підставлені args.
+      # 3. Якщо imageName вказано і образ є в registry - тягне його
+      #    замість docker build. Якщо образу немає - будує з Dockerfile.
       # 4. Монтує checkout у workspaceFolder.
       # 5. Виконує runCmd від імені remoteUser.
       #
@@ -46,10 +61,10 @@ jobs:
       - name: Build inside dev container
         uses: devcontainers/ci@v0.3
         with:
-          # push: never - не публікувати built image ніде. За замовчуванням
-          # action пробує push у registry і падає з "imageName is required"
-          # бо ми не конфігуруємо registry. Image потрібен тільки локально
-          # на runner-і для runCmd.
+          # imageName - звідси action тягне образ замість docker build.
+          # Публікується окремим workflow publish-image.yml.
+          imageName: ghcr.io/${{ github.repository_owner }}/cpp-miltech-devcontainer
+          # push: never - CI тільки споживає образ, публікація — в publish-image.yml.
           push: never
           runCmd: |
             cmake --preset debug
