@@ -40,7 +40,7 @@ jobs:
       # Логінимось у ghcr.io щоб витягнути попередньо зібраний образ.
       # Без цього кроку pull падає навіть для публічного пакету на першому
       # запиті у job-і.
-      - name: Log in to ghcr.io
+      - name: Log in to ghcr.io     
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
