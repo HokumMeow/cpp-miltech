@@ -23,6 +23,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # ghcr.io вимагає lowercase для назв образів, а github.repository_owner
+      # повертає оригінальний регістр нікнейму (напр. HokumMeow).
+      - name: Set lowercase owner
+        run: echo "OWNER=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
       # Логінимось у GitHub Container Registry через вбудований GITHUB_TOKEN.
       # Окремих секретів не потрібно — токен доступний автоматично у будь-якому workflow.
       - name: Log in to ghcr.io
@@ -43,7 +48,7 @@ jobs:
         with:
           context: .devcontainer
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/cpp-miltech-devcontainer:latest
+          tags: ghcr.io/${{ env.OWNER }}/cpp-miltech-devcontainer:latest
           build-args: |
             CONTAINER_USER=runner
             WORKSPACE_FOLDER=/home/runner/${{ github.event.repository.name }}

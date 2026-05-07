@@ -32,6 +32,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # ghcr.io вимагає lowercase для назв образів, а github.repository_owner
+      # повертає оригінальний регістр нікнейму (напр. HokumMeow).
+      - name: Set lowercase owner
+        run: echo "OWNER=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
       # Логінимось у ghcr.io щоб витягнути попередньо зібраний образ.
       # Без цього кроку pull падає навіть для публічного пакету на першому
       # запиті у job-і.
@@ -63,7 +68,7 @@ jobs:
         with:
           # imageName - звідси action тягне образ замість docker build.
           # Публікується окремим workflow publish-image.yml.
-          imageName: ghcr.io/${{ github.repository_owner }}/cpp-miltech-devcontainer
+          imageName: ghcr.io/${{ env.OWNER }}/cpp-miltech-devcontainer
           # push: never - CI тільки споживає образ, публікація — в publish-image.yml.
           push: never
           runCmd: |
