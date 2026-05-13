@@ -12,6 +12,7 @@ struct Frame {
     double temperature_c;
     int gps_fix;
     int satellites;
+    bool parsing_valid;
 };
 
 // Aggregated values printed by the executable.

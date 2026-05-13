@@ -38,71 +38,136 @@ int split_line(char line[], char* fields[], int max_fields) {
     return count;
 }
 
-long parse_long(const char* text) {
+long parse_long(const char* text, bool* is_valid) {
     char* end = nullptr;
     const long value = std::strtol(text, &end, 10);
 
     if (end == text) {
-        std::abort();
+        *is_valid = false;
+        return 0;
     }
 
     return value;
 }
 
-int parse_int(const char* text) {
-    return static_cast<int>(parse_long(text));
+int parse_int(const char* text, bool* is_valid) {
+    return static_cast<int>(parse_long(text, is_valid));
 }
 
-double parse_double(const char* text) {
+double parse_double(const char* text, bool* is_valid) {
     char* end = nullptr;
     const double value = std::strtod(text, &end);
 
     if (end == text) {
-        std::abort();
+        *is_valid = false;
+        return 0.0;
     }
 
     return value;
 }
 
-Frame parse_frame(char line[]) {
+Frame parse_frame(char line[], const int frame_index) {
     char* fields[EXPECTED_FIELD_COUNT] = {};
-    const int field_count = split_line(line, fields, EXPECTED_FIELD_COUNT);
-    (void)field_count;
-
+    const int field_count = split_line(line, fields, EXPECTED_FIELD_COUNT); 
     Frame frame{};
-    frame.timestamp_ms = parse_long(fields[0]);
-    frame.seq = parse_int(fields[1]);
-    frame.voltage_v = parse_double(fields[2]);
-    frame.current_a = parse_double(fields[3]);
-    frame.temperature_c = parse_double(fields[4]);
-    frame.gps_fix = parse_int(fields[5]);
-    frame.satellites = parse_int(fields[6]);
+    if (field_count != EXPECTED_FIELD_COUNT) {
+        frame.parsing_valid = false;
+        std::cerr << "error: invalid frame at line " << frame_index + 1 << ": expected 7 fields" << std::endl;
+        return frame;
+    }
+    frame.parsing_valid = true;
+    frame.timestamp_ms = parse_long(fields[0], &frame.parsing_valid);
+    frame.seq = parse_int(fields[1], &frame.parsing_valid);
+    frame.voltage_v = parse_double(fields[2], &frame.parsing_valid);
+    frame.current_a = parse_double(fields[3], &frame.parsing_valid);
+    frame.temperature_c = parse_double(fields[4], &frame.parsing_valid);
+    frame.gps_fix = parse_int(fields[5], &frame.parsing_valid);
+    frame.satellites = parse_int(fields[6], &frame.parsing_valid);
+    if (!frame.parsing_valid) {
+        std::cerr << "error: failed to parse frame at line " << frame_index + 1 << std::endl;
+    }
     return frame;
 }
 
 double compute_frame_rate_hz(const Frame frames[], int frame_count) {
     const long elapsed_ms = frames[frame_count - 1].timestamp_ms - frames[0].timestamp_ms;
-
-    return static_cast<double>((frame_count - 1) * 1000 / elapsed_ms);
+    // щоб не було ділення на нуль
+    if (elapsed_ms == 0) {
+        return 0.0;
+    }
+    // 1000 замінено на 1000.0, щоб у виразі не відкидалась дробова частина
+    return static_cast<double>((frame_count - 1) * 1000.0 / elapsed_ms);
 }
+
+// додана функція перевірки значень фрейма
+bool check_frame(const Frame& frame, const int frame_index) {
+
+    if (frame.timestamp_ms < 0) {
+        std::cerr << "error: invalid timestamp value at frame " << frame_index + 1 << std::endl;
+        return false;
+    }
+    if (frame.seq < 0) {
+        std::cerr << "error: invalid sequence value at frame " << frame_index + 1 << std::endl;
+        return false;
+    }
+    if (frame.voltage_v <= 0) {
+        std::cerr << "error: invalid voltage value at frame " << frame_index + 1 << std::endl;
+        return false;
+    }
+    if (frame.temperature_c < -40 || frame.temperature_c > 120) {
+        std::cerr << "error: invalid temperature value at frame " << frame_index + 1 << std::endl;
+        return false;
+    }
+    if (frame.gps_fix != 0 && frame.gps_fix != 1) {
+        std::cerr << "error: invalid GPS fix value at frame " << frame_index + 1 << std::endl;
+        return false;
+    }
+    if (frame.satellites < 0) {
+        std::cerr << "error: invalid satellite count at frame " << frame_index + 1 << std::endl;
+        return false;
+    }
+    return true;
+}
+
 
 int read_frames(const char* path, Frame frames[], int max_frames) {
     std::ifstream input{path};
     if (!input) {
         std::cerr << "error: failed to open input file: " << path << '\n';
-        return 0;
+        return -1;
     }
 
     int frame_count = 0;
     char line[MAX_LINE_LENGTH];
 
+    long prev_timestamp_ms = -1;
+    int prev_seq = -1;
     while (input.getline(line, MAX_LINE_LENGTH)) {
         if (line[0] == '\0') {
             continue;
         }
-
         if (frame_count < max_frames) {
-            frames[frame_count] = parse_frame(line);
+            Frame frame = parse_frame(line, frame_count);
+            if (frame.parsing_valid) {
+                frames[frame_count] = frame;
+            }
+            else {
+                return -1;
+            }
+            bool frame_valid = check_frame(frame, frame_count);
+            if (!frame_valid) {
+                return -1;
+            }
+            if (prev_timestamp_ms != -1 && frame.timestamp_ms <= prev_timestamp_ms) {
+                std::cerr << "error in frame " << frame_count + 1 << ": timestamp is not increasing" << std::endl;
+                return -1;
+            }
+            if (prev_seq != -1 && frame.seq != prev_seq + 1) {
+                std::cerr << "error in frame " << frame_count + 1 << ": sequence is not increasing by 1" << std::endl;
+                return -1;
+            }
+            prev_timestamp_ms = frame.timestamp_ms;
+            prev_seq = frame.seq;
             ++frame_count;
         }
     }
@@ -112,6 +177,9 @@ int read_frames(const char* path, Frame frames[], int max_frames) {
 
 Summary summarize(const Frame frames[], int frame_count) {
     Summary summary{};
+    if (frame_count == 0){
+        return summary;    
+    }
     summary.frames_total = frame_count;
     summary.frames_valid = frame_count;
     summary.voltage_min = frames[0].voltage_v;
