@@ -26,6 +26,48 @@
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchains/aarch64-linux-gnu.cmake"
       }
+    },
+    {
+      "name": "release",
+      "displayName": "Release",
+      "description": "Release build для занять блоку 2: символи для GDB і зрозуміла структура build/release.",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "aarch64-release",
+      "displayName": "ARM64 Release",
+      "description": "Cross-compile release build для Raspberry Pi / Radxa / Jetson через aarch64-linux-gnu toolchain.",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/aarch64-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchains/aarch64-linux-gnu.cmake"
+      }
+    },
+    {
+      "name": "relwithdebinfo",
+      "displayName": "RelWithDebInfo",
+      "description": "Release build з символами для GDB і зрозуміла структура build/relwithdebinfo.",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/relwithdebinfo",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    },
+    {
+      "name": "aarch64-relwithdebinfo",
+      "displayName": "ARM64 RelWithDebInfo",
+      "description": "Cross-compile relwithdebinfo build для Raspberry Pi / Radxa / Jetson через aarch64-linux-gnu toolchain.",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/aarch64-relwithdebinfo",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchains/aarch64-linux-gnu.cmake"
+      }
     }
   ],
   "buildPresets": [
@@ -40,6 +82,30 @@
       "displayName": "Build ARM64 Debug",
       "description": "Зібрати ARM64 debug preset після cross-configure.",
       "configurePreset": "aarch64-debug"
+    },
+    {
+      "name": "release",
+      "displayName": "Build Release",
+      "description": "Зібрати release preset після configure.",
+      "configurePreset": "release"
+    },
+    {
+      "name": "aarch64-release",
+      "displayName": "Build ARM64 Release",
+      "description": "Зібрати ARM64 release preset після cross-configure.",
+      "configurePreset": "aarch64-release"
+    },
+    {
+      "name": "relwithdebinfo",
+      "displayName": "Build RelWithDebInfo",
+      "description": "Зібрати relwithdebinfo preset після configure.",
+      "configurePreset": "relwithdebinfo"
+    },
+    {
+      "name": "aarch64-relwithdebinfo",
+      "displayName": "Build ARM64 RelWithDebInfo",
+      "description": "Зібрати ARM64 relwithdebinfo preset після cross-configure.",
+      "configurePreset": "aarch64-relwithdebinfo"
     }
   ]
 }
