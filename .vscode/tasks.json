@@ -4,7 +4,6 @@
   "version": "2.0.0",
   "tasks": [
     {
-      // Default build task: Ctrl+Shift+B запускає debug preset, потім build.
       "label": "CMake: configure and build",
       "type": "shell",
       "command": "cmake --preset debug && cmake --build --preset debug",
@@ -22,7 +21,6 @@
       }
     },
     {
-      // Clean task навмисно простий: видаляється тільки локальна build директорія.
       "label": "CMake: clean build directory",
       "type": "shell",
       "command": "rm -rf build",
@@ -32,6 +30,40 @@
         "panel": "dedicated",
         "clear": true
       }
-    }
+    },
+    {
+      "type": "cmake",
+      "label": "CMake: build",
+      "command": "build",
+      "targets": [
+        "all"
+      ],
+      "group": "build",
+      "problemMatcher": [],
+      "detail": "CMake template build task"
+    },
+    {
+      "type": "shell",
+      "label": "C/C++: g++ build active file (Linux/WSL)",
+      "command": "g++",
+      "args": [
+          "-g",
+          "-std=c++17",
+          "-o",
+          "${fileDirname}/${fileBasenameNoExtension}",
+          "${file}"
+      ],
+      "options": {
+          "cwd": "${fileDirname}"
+      },
+      "problemMatcher": [
+          "$gcc"
+      ],
+      "group": {
+          "kind": "build",
+          "isDefault": false
+      },
+      "detail": "Builds using g++ on Linux/WSL2"
+  } 
   ]
 }
