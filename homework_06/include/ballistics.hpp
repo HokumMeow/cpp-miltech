@@ -1,14 +1,15 @@
+#pragma once
 #include <optional>
-using namespace std;
+
 struct BallisticsInput {
-    float drone_x, drone_y, drone_z;
-    float target_x, target_y;
-    float attack_speed, acceleration_path;
-    const char* ammo_name;
+  float drone_x_, drone_y_, drone_z_;
+  float target_x_, target_y_;
+  float attack_speed_, acceleration_path_;
+  const char* ammo_name_;
 };
 
 struct DropSolution {
-    float fire_x = 0.f, fire_y = 0.f, intermediate_x = 0.f, intermediate_y = 0.f;
+  float fire_x_ = 0.F, fire_y_ = 0.F, intermediate_x_ = 0.F, intermediate_y_ = 0.F;
 };
 
-optional<DropSolution>  compute_drop_solution(const BallisticsInput& input);
+auto compute_drop_solution(const BallisticsInput& input) -> std::optional<DropSolution>;
