@@ -20,7 +20,6 @@ target_link_libraries(ballistics_cli PRIVATE ballistics)
 target_compile_options(ballistics_cli PRIVATE -Wall -Wextra -pedantic)
 
 if(NOT CMAKE_CROSSCOMPILING)
-include(FetchContent)
 include(GoogleTest)
 add_executable(ballistics_tests tests/ballistics_tests.cpp)
 target_link_libraries(ballistics_tests PRIVATE ballistics GTest::gtest_main)
