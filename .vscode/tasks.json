@@ -64,6 +64,38 @@
           "isDefault": false
       },
       "detail": "Builds using g++ on Linux/WSL2"
-  } 
+    },
+    {
+      "label": "Quality: format",
+      "type": "shell",
+      "command": "clang-format -i homework_06/include/ballistics.hpp homework_06/src/ballistics.cpp homework_06/src/main.cpp homework_06/tests/ballistics_tests.cpp && cmake-format -i homework_06/CMakeLists.txt",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true }
+    },
+    {
+      "label": "Quality: lint",
+      "type": "shell",
+      "command": "clang-tidy --config-file=.devcontainer/.clang-tidy -p build/debug homework_06/src/ballistics.cpp homework_06/src/main.cpp homework_06/include/ballistics.hpp homework_06/tests/ballistics_tests.cpp",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true }
+    },
+    {
+      "label": "Quality: test",
+      "type": "shell",
+      "command": "ctest --test-dir build/debug --output-on-failure",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true }
+    },
+    {
+      "label": "Quality: check all",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "CMake: configure and build",
+        "Quality: format",
+        "Quality: lint",
+        "Quality: test"
+      ],
+      "problemMatcher": []
+    }
   ]
 }

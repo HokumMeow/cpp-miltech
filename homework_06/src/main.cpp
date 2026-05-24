@@ -7,7 +7,8 @@
 
 auto main(int argc, char* argv[]) -> int
 {
-  // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic) для зручності обробки аргументів командного рядка за допомогою std::span, оскільки це дозволяє легко отримати розмір і доступ до аргументів без необхідності ручного керування вказівниками.
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic) для зручності обробки аргументів командного рядка за допомогою
+  // std::span, оскільки це дозволяє легко отримати розмір і доступ до аргументів без необхідності ручного керування вказівниками.
   const auto kArgs = std::span<char*>(argv, static_cast<std::size_t>(argc));
   if (kArgs.size() < 3) {
     std::cerr << "usage: ballistic <input_path> <output_path>\n";

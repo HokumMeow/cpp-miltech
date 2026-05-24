@@ -58,7 +58,7 @@
       "name": "Debug homework_06: ballistic",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/debug/homework_06/ballistic",
+      "program": "${workspaceFolder}/build/debug/homework_06/ballistics_cli",
       "args": [
         "${workspaceFolder}/homework_06/data/input.txt",
         "${workspaceFolder}/homework_06/data/output.txt"
