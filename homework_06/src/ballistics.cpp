@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cmath>
 #include <cstring>
+#include <optional>
 #include "ballistics.hpp"
 
 using namespace std;
@@ -54,35 +55,26 @@ float calc_h(const AmmoParams& a, float attackSpeed, float t)
     return result;
 }
 
-static AmmoParams lookup_ammo(const char* name)
+static optional<AmmoParams> lookup_ammo(const char* name)
 {
-    AmmoParams ammo;
-    if (strcmp(name, "VOG-17") == 0) {
-        ammo.mass = 0.35f; ammo.drag = 0.07f; ammo.lift = 0.0f;
-    } else if (strcmp(name, "M67") == 0) {
-        ammo.mass = 0.6f; ammo.drag = 0.1f; ammo.lift = 0.0f;
-    } else if (strcmp(name, "RKG-3") == 0) {
-        ammo.mass = 1.2f; ammo.drag = 0.1f; ammo.lift = 0.0f;
-    } else if (strcmp(name, "GLIDING-VOG") == 0) {
-        ammo.mass = 0.45f; ammo.drag = 0.1f; ammo.lift = 1.0f;
-    } else if (strcmp(name, "GLIDING-RKG") == 0) {
-        ammo.mass = 1.4f; ammo.drag = 0.1f; ammo.lift = 1.0f;
-    } else {
-        cerr << "Unknown ammo" << endl;
-        exit(1);
-    }
-    return ammo;
+    if (strcmp(name, "VOG-17") == 0)      return AmmoParams{0.35f, 0.07f, 0.0f};
+    if (strcmp(name, "M67") == 0)         return AmmoParams{0.6f,  0.1f,  0.0f};
+    if (strcmp(name, "RKG-3") == 0)       return AmmoParams{1.2f,  0.1f,  0.0f};
+    if (strcmp(name, "GLIDING-VOG") == 0) return AmmoParams{0.45f, 0.1f,  1.0f};
+    if (strcmp(name, "GLIDING-RKG") == 0) return AmmoParams{1.4f,  0.1f,  1.0f};
+    return nullopt;
 }
 
-DropSolution compute_drop_solution(const BallisticsInput& input) {
-    AmmoParams ammo = lookup_ammo(input.ammo_name);
-   
+optional<DropSolution> compute_drop_solution(const BallisticsInput& input) {
+    auto ammo_opt = lookup_ammo(input.ammo_name);
+    if (!ammo_opt) return nullopt;
+    const AmmoParams& ammo = *ammo_opt;
     
     float t = calc_t(ammo, input.attack_speed, input.drone_z);
     
     if (t <= 0){
        cerr << "t out of range" << endl;
-       return {0.f, 0.f};
+       return nullopt;
     }
 
     float h = calc_h(ammo, input.attack_speed, t);
@@ -90,16 +82,22 @@ DropSolution compute_drop_solution(const BallisticsInput& input) {
     float D = sqrtf(powf(input.target_x-input.drone_x,2.f) + powf(input.target_y-input.drone_y,2.f));
     if (D <= 0){
        cerr << "D out of range" << endl;
-       return {0.f, 0.f};
+       return nullopt;
     }
 
-    float ratio = (D-h) / D;
-    float fireX = input.drone_x + (input.target_x - input.drone_x)*ratio;
-    float fireY = input.drone_y + (input.target_y - input.drone_y)*ratio;
-
-
     DropSolution solution;
-    solution.fire_x = fireX;
-    solution.fire_y = fireY;
-    return solution;
+    float ratio = (D-h) / D;
+    solution.fire_x = input.drone_x + (input.target_x - input.drone_x)*ratio;
+    solution.fire_y = input.drone_y + (input.target_y - input.drone_y)*ratio;
+
+    if (h + input.acceleration_path > D) {
+        float xd = input.target_x - (input.target_x - input.drone_x) * (h + input.acceleration_path) / D;
+        float yd = input.target_y - (input.target_y - input.drone_y) * (h + input.acceleration_path) / D;
+        
+        solution.fire_x = xd;
+        solution.fire_y = yd;
+        return optional<DropSolution>{solution};
+    }
+
+    return optional<DropSolution>{solution};
 }

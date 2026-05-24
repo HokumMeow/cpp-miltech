@@ -34,7 +34,12 @@ int main(int argc, char* argv[])
 
     file_input.close();
 
-    DropSolution solution = compute_drop_solution(input);
+    auto solution_opt = compute_drop_solution(input);
+    if (!solution_opt) {    
+        cerr << "No drop solution found" << endl;
+        return 1;
+    }
+    DropSolution solution = *solution_opt;
 
     ofstream OutputFile(argv[2]);
     if (!OutputFile.is_open()) {
