@@ -1,59 +1,53 @@
 #include <iostream>
 #include <fstream>
+#include <span>
+#include <string>
 
 #include "ballistics.hpp"
 
-using namespace std;
-
-struct AmmoParams
+auto main(int argc, char* argv[]) -> int
 {
-    float mass;
-    float drag;
-    float lift;
-};
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic) для зручності обробки аргументів командного рядка за допомогою std::span, оскільки це дозволяє легко отримати розмір і доступ до аргументів без необхідності ручного керування вказівниками.
+  const auto kArgs = std::span<char*>(argv, static_cast<std::size_t>(argc));
+  if (kArgs.size() < 3) {
+    std::cerr << "usage: ballistic <input_path> <output_path>\n";
+    return 1;
+  }
 
-int main(int argc, char* argv[])
-{
-    
-    if (argc < 3) {
-        cerr << "usage: ballistic <input_path> <output_path>" << endl;
-        return 1;
-    }
+  BallisticsInput input = {};
 
-    BallisticsInput input;
+  std::string ammo_name;
 
-    char ammo_name[12];
+  std::ifstream file_input(kArgs[1]);
+  if (!file_input.is_open()) {
+    std::cerr << "Error opening file\n";
+    return 1;
+  }
 
-    ifstream file_input(argv[1]);
-    if (!file_input.is_open()) {
-        cerr << "Error opening file" << endl;
-        return 1;
-    }
+  file_input >> input.drone_x_ >> input.drone_y_ >> input.drone_z_ >> input.target_x_ >> input.target_y_ >> input.attack_speed_ >>
+    input.acceleration_path_ >> ammo_name;
+  input.ammo_name_ = ammo_name.data();
+  file_input.close();
 
-    file_input >> input.drone_x >> input.drone_y >> input.drone_z >> input.target_x >> input.target_y >> input.attack_speed >> input.acceleration_path >> ammo_name;
+  auto solution_opt = compute_drop_solution(input);
+  if (!solution_opt) {
+    std::cerr << "No drop solution found\n";
+    return 1;
+  }
+  DropSolution solution = *solution_opt;
 
-    file_input.close();
+  std::ofstream output_file(kArgs[2]);
+  if (!output_file.is_open()) {
+    std::cerr << "Error opening output file\n";
+    return 1;
+  }
 
-    auto solution_opt = compute_drop_solution(input);
-    if (!solution_opt) {    
-        cerr << "No drop solution found" << endl;
-        return 1;
-    }
-    DropSolution solution = *solution_opt;
+  if (solution.intermediate_x_ != 0.F && solution.intermediate_y_ != 0.F) {
+    output_file << solution.intermediate_x_ << " " << solution.intermediate_y_ << " ";
+  }
 
-    ofstream OutputFile(argv[2]);
-    if (!OutputFile.is_open()) {
-        cerr << "Error opening output file" << endl;
-        return 1;
-    }
+  output_file << solution.fire_x_ << " " << solution.fire_y_ << "\n";
+  output_file.close();
 
-    if (solution.intermediate_x != 0.f && solution.intermediate_y != 0.f) {
-        OutputFile << solution.intermediate_x << " " << solution.intermediate_y << " ";
-    }
-
-    OutputFile << solution.fire_x << " " << solution.fire_y << endl;
-    OutputFile.close();
-
-    return 0;
-
+  return 0;
 }
