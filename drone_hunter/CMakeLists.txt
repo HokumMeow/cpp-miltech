@@ -11,17 +11,27 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Бібліотека
 add_library(json include/json.hpp)
-target_include_directories(json PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_compile_options(json PRIVATE -Wall -Wextra -pedantic)
+
+add_library(json INTERFACE)
+target_include_directories(json INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Виконуваний файл
-add_executable(drone_hunter_cli src/main.cpp)
-target_link_libraries(drone_hunter_cli PRIVATE json)
-target_compile_options(drone_hunter_cli PRIVATE -Wall -Wextra -pedantic)
+add_executable(mission
+    src/main.cpp
+    src/Factory.cpp
+    src/AnalyticalSolver.cpp
+    src/JsonTargetProvider.cpp
+    src/FileConfigLoader.cpp
+    src/MissionProcessor.cpp
+)
+
+target_include_directories(mission PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_compile_options(mission PRIVATE -Wall -Wextra -pedantic)
+target_link_libraries(mission PRIVATE json)
 
 if(NOT CMAKE_CROSSCOMPILING)
     include(GoogleTest)
-    add_executable(drone_hunter_tests tests/ballistics_tests.cpp)
-    target_link_libraries(drone_hunter_tests PRIVATE json GTest::gtest_main)
-    gtest_discover_tests(drone_hunter_tests DISCOVERY_MODE PRE_TEST)
+    add_executable(mission_tests tests/ballistics_tests.cpp)
+    target_link_libraries(mission_tests PRIVATE json GTest::gtest_main)
+    gtest_discover_tests(mission_tests DISCOVERY_MODE PRE_TEST)
 endif()

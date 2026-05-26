@@ -2,7 +2,12 @@
 #include <fstream>
 #include <cstring>
 #include <cmath>
+
 #include "json.hpp"
+
+#include "Target.h"
+#include "Solver.h"
+
 
 using namespace std;
 using json = nlohmann::json;
