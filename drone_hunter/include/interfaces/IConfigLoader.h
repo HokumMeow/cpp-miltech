@@ -1,3 +1,4 @@
+#pragma once
 class IConfigLoader {
 public:
     virtual int    load() = 0;

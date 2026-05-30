@@ -1,3 +1,5 @@
+#include "interfaces/ITargetProvider.h"
+
 enum class SourceType { JSON, SERIAL, TEST };
  
 ITargetProvider* createProvider(
@@ -12,7 +14,4 @@ ITargetProvider* createProvider(
     default: return nullptr;
     }
 }
-// Використання:
-auto* prov = createProvider(
-    SourceType::JSON, "targets.json");
-delete prov;
+

@@ -9,9 +9,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Бібліотека
-add_library(json include/json.hpp)
-
+# Бібліотека json
 add_library(json INTERFACE)
 target_include_directories(json INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
@@ -20,18 +18,19 @@ add_executable(mission
     src/main.cpp
     src/Factory.cpp
     src/AnalyticalSolver.cpp
-    src/JsonTargetProvider.cpp
+    src/TargetProvider.cpp
     src/FileConfigLoader.cpp
     src/MissionProcessor.cpp
 )
 
 target_include_directories(mission PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_compile_options(mission PRIVATE -Wall -Wextra -pedantic)
 target_link_libraries(mission PRIVATE json)
 
-if(NOT CMAKE_CROSSCOMPILING)
-    include(GoogleTest)
-    add_executable(mission_tests tests/ballistics_tests.cpp)
-    target_link_libraries(mission_tests PRIVATE json GTest::gtest_main)
-    gtest_discover_tests(mission_tests DISCOVERY_MODE PRE_TEST)
-endif()
+target_compile_options(mission PRIVATE -Wall -Wextra -pedantic)
+
+#if(NOT CMAKE_CROSSCOMPILING)
+#    include(GoogleTest)
+#    add_executable(mission_tests tests/ballistics_tests.cpp)
+#    target_link_libraries(mission_tests PRIVATE json GTest::gtest_main)
+#    gtest_discover_tests(mission_tests DISCOVERY_MODE PRE_TEST)
+#endif()

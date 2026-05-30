@@ -1,4 +1,7 @@
-
+#include "interfaces/IBallisticSolver.h"
+#include "core/Factory.h"
+#include "dto/AmmoParams.h"
+#include "dto/Coord.h"
 
 class AnalyticalSolver
     : public IBallisticSolver {
