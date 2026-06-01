@@ -1,20 +1,17 @@
-#include "core/MissionProcessor.h"
-
+#include "engine/MissionProcessor.h"
 
 std::optional<DropPoint> MissionProcessor::step() {
-        Target t = targets_->getTarget(currentIdx_++);
-        return solver_->solve(dronePos_, t.pos, altitude_, ammo_, t.velocity);
+        target_ = targets_->getTarget(currentIdx_++);
+        return solver_->solve(dronePos_, target_.pos, attackSpeed_, altitude_, ammo_);
         
-        
-
 }
 
-    void changeSolver(IBallisticSolver* s) { solver_ = s; }  // ← підміна на льоту
-
-
-    //auto* prov = createProvider(
-    //    SourceType::JSON, "targets.json");
-    //delete prov;
-
+void MissionProcessor::init() {
+    DroneConfig cfg = loader_->getConfig();
+    dronePos_    = cfg.startPos;
+    altitude_    = cfg.altitude;
+    attackSpeed_ = cfg.attackSpeed;
+    ammo_        = loader_->getAmmoParams();
+    targetCount_ = targets_->getTargetCount();
+}
  
-};

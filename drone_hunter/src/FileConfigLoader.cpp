@@ -1,9 +1,8 @@
 #include <fstream>
 #include <cstring>
 #include <iostream>
-
-#include "core/FileConfigLoader.h"
-#include "core/Log.h"
+#include "engine/FileConfigLoader.h"
+#include "engine/Log.h"
 
 #include "json.hpp"
 

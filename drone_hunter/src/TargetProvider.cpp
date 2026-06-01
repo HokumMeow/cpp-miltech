@@ -1,5 +1,4 @@
-#include "core/TargetProvider.h"
-#include "core/Factory.h"
+#include "engine/TargetProvider.h"
 #include <fstream>
 #include <iostream>
 #include <cmath>
@@ -9,7 +8,7 @@ using json = nlohmann::json;
 
 JsonTargetProvider::JsonTargetProvider(const char* path, const float arrayTimeStep){
 
-    std::ifstream ft(path);
+    std::ifstream ft(path + std::string("/targets.json"));
     json jt; ft >> jt;
     targetCount_ = jt["targetCount"];
     timeSteps_ = jt["timeSteps"];
@@ -48,13 +47,4 @@ JsonTargetProvider::~JsonTargetProvider() {
     delete[] targets[i];
     delete[] targets;
     delete[] current_;
-}
-
-ITargetProvider* createProvider(
-    ProviderType type, const char* param, float arrayTimeStep) {
-    switch (type) {
-    case ProviderType::JSON:
-        return new JsonTargetProvider(param, arrayTimeStep);
-    default: return nullptr;
-    }
 }

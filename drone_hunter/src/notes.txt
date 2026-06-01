@@ -1,0 +1,27 @@
+Вся логіка — і вибір цілі, і машина станів — йде в MissionProcessor::step(). Ось як це розподіляється:
+
+ITargetProvider::getTarget(idx) — тільки доступ до даних, ніякої логіки:
+
+
+// просто повертає дані про ціль за індексом
+Target getTarget(int idx) { return current_[idx]; }
+MissionProcessor::step() — вся логіка одного кроку симуляції з main.old:
+
+
+1. targets_->update(currentTime_)         ← оновити позиції всіх цілей
+2. for (i = 0..targetCount_)              ← перебрати всі цілі
+      getTarget(i) + calc totalTime       ← вибрати найкращу (мінімальний час)
+3. calc firePoint для найкращої цілі      ← solver_->solve(...)
+4. машина станів (STOPPED/ACCEL/MOVING)  ← оновити позицію дрона
+5. currentTime_ += simTimeStep_           ← просунути час
+6. повернути SimStep або DropPoint        ← результат
+Це означає що MissionProcessor потребує більше полів, ніж зараз. Подивись на main.old — які змінні використовуються в циклі:
+
+
+float currentDir;     // поточний напрямок дрона
+float speed;          // поточна швидкість
+DroneState droneState; // стан: STOPPED/ACCEL/MOVING/DECEL/TURNING
+float currentTime;    // поточний час симуляції
+float angleDiff;      // різниця кутів
+int prevBestTarget;   // попередня найкраща ціль
+Всі вони повинні стати полями MissionProcessor.

@@ -5,8 +5,8 @@ class IConfigLoader;
 
 enum class SolverType   { ANALYTICAL };
 enum class ProviderType { JSON };
-enum class LoaderType   { FILE };
+enum class ConfigLoaderType   { FILE };
 
 IBallisticSolver* createSolver(SolverType type);
-ITargetProvider*  createProvider(ProviderType type, const char* param);
-IConfigLoader*    createLoader(LoaderType type);
+ITargetProvider*  createProvider(ProviderType type, const char* path, float arrayTimeStep);
+IConfigLoader*    createLoader(ConfigLoaderType type, const char* path);
