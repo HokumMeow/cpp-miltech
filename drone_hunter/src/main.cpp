@@ -5,7 +5,10 @@
 
 #include "json.hpp"
 
-#include "dto/Target.h"
+#include "interfaces/IBallisticSolver.h"
+#include "interfaces/ITargetProvider.h"
+#include "core/MissionProcessor.h"
+#include "core/Factory.h"
 
 
 using namespace std;
@@ -26,10 +29,6 @@ using json = nlohmann::json;
 #define DEBUG(msg)
 #endif
 
-const float g = 9.81f;
-const int MAX_STEPS = 10000;
-const float PI = 3.14159265f;
-
 int main() {
     
     
@@ -43,10 +42,10 @@ int main() {
 
     while (mission.hasNext()) {
         DropPoint dp = mission.step();
-        printf("drop: (%.1f, %.1f)\n", dp.x, dp.y);
+        printf("drop: (%.1f, %.1f)\n", dp.coord.x, dp.coord.y);
     }
 
-    LOG("Simulation finished in " << step << " steps, time=" << currentTime << "s");
+    //LOG("Simulation finished in " << step << " steps, time=" << currentTime << "s");
 
     delete solver;
     delete targets;

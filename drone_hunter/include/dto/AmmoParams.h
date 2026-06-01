@@ -2,5 +2,6 @@
 struct AmmoParams {
     const char* name;
     float mass;
-    float dragCoeff;
+    float drag;
+    float lift;
 };

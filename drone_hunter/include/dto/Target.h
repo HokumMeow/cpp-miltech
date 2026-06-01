@@ -3,4 +3,5 @@
 
 struct Target {
     Coord pos;
+    Coord velocity;
 };

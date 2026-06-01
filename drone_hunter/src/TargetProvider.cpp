@@ -1,17 +1,60 @@
-#include "interfaces/ITargetProvider.h"
+#include "TargetProvider.h"
+#include "core/Factory.h"
+#include <fstream>
+#include <iostream>
+#include <cmath>
+#include "json.hpp"
 
-enum class SourceType { JSON, SERIAL, TEST };
- 
+using json = nlohmann::json;
+
+JsonTargetProvider::JsonTargetProvider(const char* path, const float arrayTimeStep){
+
+    std::ifstream ft(path);
+    json jt; ft >> jt;
+    targetCount_ = jt["targetCount"];
+    timeSteps_ = jt["timeSteps"];
+    arrayTimeStep_ = arrayTimeStep;
+    targets = nullptr;
+    if (targetCount_ <= 0) {
+        std::cerr << "0 targets!" << std::endl;
+        return;
+    }
+    targets = new Coord*[targetCount_];
+    for (int i = 0; i < targetCount_; i++) {
+        targets[i] = new Coord[timeSteps_];
+        for (int j = 0; j < timeSteps_; j++) {
+            targets[i][j].x = jt["targets"][i]["positions"][j]["x"];
+            targets[i][j].y = jt["targets"][i]["positions"][j]["y"];
+        }
+    }
+    current_ = new Target[targetCount_]{};
+
+};
+
+void JsonTargetProvider::update(float time) {
+    for (int i = 0; i < targetCount_; i++) {
+        int idx = (int)floorf(time / arrayTimeStep_) % timeSteps_;
+        int next = (idx + 1) % timeSteps_;
+        float frac = (time - idx * arrayTimeStep_) / arrayTimeStep_;
+        current_[i].pos.x = targets[i][idx].x + (targets[i][next].x - targets[i][idx].x) * frac;
+        current_[i].pos.y = targets[i][idx].y + (targets[i][next].y - targets[i][idx].y) * frac;
+        current_[i].velocity.x = (targets[i][next].x - targets[i][idx].x) / arrayTimeStep_;
+        current_[i].velocity.y = (targets[i][next].y - targets[i][idx].y) / arrayTimeStep_;
+    }
+};  
+
+JsonTargetProvider::~JsonTargetProvider() {
+    for (int i = 0; i < targetCount_; i++)
+    delete[] targets[i];
+    delete[] targets;
+    delete[] current_;
+}
+
 ITargetProvider* createProvider(
-    SourceType type, const char* param) {
+    ProviderType type, const char* param, float arrayTimeStep) {
     switch (type) {
-    case SourceType::JSON:
-        return new JsonTargetProvider(param);
-    case SourceType::SERIAL:
-        return new SerialTargetProvider(param);
-    case SourceType::TEST:
-        return new TestTargetProvider();
+    case ProviderType::JSON:
+        return new JsonTargetProvider(param, arrayTimeStep);
     default: return nullptr;
     }
 }
-

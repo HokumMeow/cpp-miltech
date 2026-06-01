@@ -1,4 +1,6 @@
 #pragma once
+#include "dto/Coord.h"
+
 struct DropPoint {
-    float x, y;
+    Coord coord;
 };
