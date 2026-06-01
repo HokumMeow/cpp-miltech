@@ -1,80 +1,83 @@
-#include "FileConfigLoader.h"
 #include <fstream>
 #include <cstring>
 #include <iostream>
+
+#include "core/FileConfigLoader.h"
+#include "core/Log.h"
 
 #include "json.hpp"
 
 using json = nlohmann::json;
 
-FileConfigLoader::FileConfigLoader(const char* path)
-{
-    load();
-}
-
 void FileConfigLoader::load(){
 
-    std::ifstream fin("config.json");
+    std::ifstream fin(path_ + std::string("/config.json"));
+    if (!fin.is_open())
+    {
+        std::cerr << "Error opening config file" << std::endl;
+        return;
+    }
+
     json j;
     fin >> j;
 
-    DroneConfig config;
-    config.startPos.x = j["drone"]["position"]["x"];
-    config.startPos.y = j["drone"]["position"]["y"];
-    config.altitude = j["drone"]["altitude"];
-    config.initialDir = j["drone"]["initialDirection"];
-    config.attackSpeed = j["drone"]["attackSpeed"];
-    config.accelPath = j["drone"]["accelerationPath"];
-    config.angularSpeed = j["drone"]["angularSpeed"];
-    config.turnThreshold = j["drone"]["turnThreshold"];
-    config.arrayTimeStep = j["targetArrayTimeStep"];
-    config.simTimeStep   = j["simulation"]["timeStep"];
-    config.hitRadius     = j["simulation"]["hitRadius"];
+    config_.startPos.x = j["drone"]["position"]["x"];
+    config_.startPos.y = j["drone"]["position"]["y"];
+    config_.altitude = j["drone"]["altitude"];
+    config_.initialDir = j["drone"]["initialDirection"];
+    config_.attackSpeed = j["drone"]["attackSpeed"];
+    config_.accelPath = j["drone"]["accelerationPath"];
+    config_.angularSpeed = j["drone"]["angularSpeed"];
+    config_.turnThreshold = j["drone"]["turnThreshold"];
+    config_.arrayTimeStep = j["targetArrayTimeStep"];
+    config_.simTimeStep   = j["simulation"]["timeStep"];
+    config_.hitRadius     = j["simulation"]["hitRadius"];
 
     std::string ammoStr = j["ammo"].get<std::string>();
-    std::strncpy(config.ammoName, ammoStr.c_str(), 31);
+    std::strncpy(config_.ammoName, ammoStr.c_str(), 31);
 
-    LOG("Config loaded: x=" << config.startPos.x);
-    LOG("Config loaded: y=" << config.startPos.y);
-    LOG("Config loaded: speed=" << config.attackSpeed);
-    LOG("Config loaded: altitude=" << config.altitude);
-    LOG("Config loaded: initial direction=" << config.initialDir);
-    LOG("Config loaded: attack speed=" << config.attackSpeed);
-    LOG("Config loaded: turn threshold=" << config.turnThreshold);
-    LOG("Config loaded: array time step=" << config.arrayTimeStep);
-    LOG("Config loaded: simulation time step=" << config.simTimeStep);
-    LOG("Config loaded: hit radius=" << config.hitRadius);
+    LOG("Config loaded: x=" << config_.startPos.x);
+    LOG("Config loaded: y=" << config_.startPos.y);
+    LOG("Config loaded: speed=" << config_.attackSpeed);
+    LOG("Config loaded: altitude=" << config_.altitude);
+    LOG("Config loaded: initial direction=" << config_.initialDir);
+    LOG("Config loaded: attack speed=" << config_.attackSpeed);
+    LOG("Config loaded: turn threshold=" << config_.turnThreshold);
+    LOG("Config loaded: array time step=" << config_.arrayTimeStep);
+    LOG("Config loaded: simulation time step=" << config_.simTimeStep);
+    LOG("Config loaded: hit radius=" << config_.hitRadius);
 
     ////////////////////////////////////////////////////////////////////////
     // Читання JSON ammo
-    std::ifstream f_a("ammo.json");
+    std::ifstream f_a(path_ + std::string("/ammo.json"));
     if (!f_a.is_open())
     {
         std::cerr << "Error opening ammo file" << std::endl;
-        //return 1;
+        return;
     }
 
     json j_a;
     f_a >> j_a;
     int ammoCount = j_a.size();
     int selectedAmmo = -1;
-    AmmoParams* ammo = new AmmoParams[ammoCount];
     for (int i = 0; i < ammoCount; i++) {
-        std::strncpy(ammo[i].name, j_a[i]["name"].get<std::string>().c_str(), 31);
-        ammo[i].mass = j_a[i]["mass"];
-        ammo[i].drag = j_a[i]["drag"];
-        ammo[i].lift = j_a[i]["lift"];
-        if (strcmp(ammo[i].name, config.ammoName) == 0)
-        {
+        AmmoParams current;
+        std::strncpy(current.name, j_a[i]["name"].get<std::string>().c_str(), 31);
+        current.mass = j_a[i]["mass"];
+        current.drag = j_a[i]["drag"];
+        current.lift = j_a[i]["lift"];
+        if (strcmp(current.name, config_.ammoName) == 0) {
+            ammoParams_ = current; 
             selectedAmmo = i;
         }
     }
     if (selectedAmmo == -1)
     {
         std::cerr << "Unknown ammo!" << std::endl;
-        delete[] ammo;
-        return 1;
+        return;
     }
 
-    LOG("Config loaded: ammo=" << config.ammoName);
+    LOG("Config loaded: ammo=" << config_.ammoName);
+
+    loaded_ = true;
 }

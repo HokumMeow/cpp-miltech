@@ -1,18 +1,13 @@
 #include "core/MissionProcessor.h"
 
-class MissionProcessor {
-    IBallisticSolver* solver_;   
-    ITargetProvider* targets_;
 
-    // ...
-public:
-    DropPoint step() {
+std::optional<DropPoint> MissionProcessor::step() {
         Target t = targets_->getTarget(currentIdx_++);
-        return solver_->solve(dronePos_, t.pos, altitude_, ammo_);
+        return solver_->solve(dronePos_, t.pos, altitude_, ammo_, t.velocity);
         
         
 
-    }
+}
 
     void changeSolver(IBallisticSolver* s) { solver_ = s; }  // ← підміна на льоту
 
