@@ -3,11 +3,14 @@
 
 class AnalyticalSolver : public IBallisticSolver {
 public:
-    std::optional<DropPoint> solve(Coord dronePos, Coord targetPos,
+    std::optional<Coord> solve(Coord dronePos, Coord targetPos,
                                    float speed, float alt,
                                    const AmmoParams& ammo) override;
+    bool precompute(float speed, float alt, const AmmoParams& ammo) override;
+    float getBallisticTime() const override;
+    float getHorizDist() const override;
+
 private:
-    float calc_t(const AmmoParams& a, float speed, float alt);
-    float calc_h(const AmmoParams& a, float speed, float t);
-    Coord normalize(Coord c);
+    float t_ballist_;
+    float h_ballist_;
 };

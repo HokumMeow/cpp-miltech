@@ -8,7 +8,10 @@ float calc_t(const AmmoParams& a, float attackSpeed, float zd);
 float calc_h(const AmmoParams& a, float attackSpeed, float t);
 Coord normalize(Coord c);
 
-std::optional<DropPoint> solve(Coord dronePos, Coord targetPos,
+static constexpr float PI = 3.14159265f;
+static constexpr float g  = 9.81f;
+
+std::optional<Coord> AnalyticalSolver::solve(Coord dronePos, Coord targetPos,
                 float speed, float alt, const AmmoParams& ammo
 )  {
     float t_ballist = calc_t(ammo, speed, alt);
@@ -16,12 +19,24 @@ std::optional<DropPoint> solve(Coord dronePos, Coord targetPos,
     float hDist = calc_h(ammo, speed, t_ballist);
     if (hDist <= 0.f) return std::nullopt;
     Coord firePoint = targetPos - normalize(targetPos - dronePos) * hDist;
-    return DropPoint{firePoint.x, firePoint.y};
+    return Coord{firePoint.x, firePoint.y};
 }
 
+bool AnalyticalSolver::precompute(float speed, float alt, const AmmoParams& ammo) {
+    t_ballist_ = calc_t(ammo, speed, alt);
+    if (t_ballist_ == -1.f) return false;
+    h_ballist_ = calc_h(ammo, speed, t_ballist_);
+    if (h_ballist_ <= 0.f) return false;
+    return true;
+}
 
-static constexpr float PI = 3.14159265f;
-static constexpr float g  = 9.81f;
+float AnalyticalSolver::getBallisticTime() const {
+    return t_ballist_;
+}
+
+float AnalyticalSolver::getHorizDist() const {
+    return h_ballist_;
+}
 
 float calc_t(const AmmoParams& a, float attackSpeed, float zd)
 {
@@ -61,9 +76,7 @@ float calc_h(const AmmoParams& a, float attackSpeed, float t)
     return result;
 }
 
-
 Coord normalize(Coord c) {
     return c / hypot(c.x, c.y);
 }
-
 
