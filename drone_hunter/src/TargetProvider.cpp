@@ -40,7 +40,17 @@ void JsonTargetProvider::update(float time) {
         current_[i].velocity.x = (targets[i][next].x - targets[i][idx].x) / arrayTimeStep_;
         current_[i].velocity.y = (targets[i][next].y - targets[i][idx].y) / arrayTimeStep_;
     }
-};  
+};
+
+Coord JsonTargetProvider::getPositionAt(int idx, float time) {
+    int idx_ = (int)floorf(time / arrayTimeStep_) % timeSteps_;
+    int next = (idx_ + 1) % timeSteps_;
+    float frac = (time - idx_ * arrayTimeStep_) / arrayTimeStep_;
+    return {
+        targets[idx][idx_].x + (targets[idx][next].x - targets[idx][idx_].x) * frac,
+        targets[idx][idx_].y + (targets[idx][next].y - targets[idx][idx_].y) * frac
+    };
+}
 
 JsonTargetProvider::~JsonTargetProvider() {
     for (int i = 0; i < targetCount_; i++)

@@ -9,6 +9,7 @@ public:
     int    getTimeSteps() override { return timeSteps_; }
     Target getTarget(int idx) override { return current_[idx]; }
     void   update(float time) override;
+    Coord getPositionAt(int idx, float time) override;
     ~JsonTargetProvider();
 private:
     Coord** targets;

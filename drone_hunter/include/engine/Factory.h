@@ -9,4 +9,4 @@ enum class ConfigLoaderType   { FILE };
 
 IBallisticSolver* createSolver(SolverType type);
 ITargetProvider*  createProvider(ProviderType type, const char* path, float arrayTimeStep);
-IConfigLoader*    createLoader(ConfigLoaderType type, const char* path);
+IConfigLoader*    createConfigLoader(ConfigLoaderType type, const char* path);

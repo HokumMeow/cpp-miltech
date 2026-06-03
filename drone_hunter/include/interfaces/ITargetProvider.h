@@ -7,5 +7,6 @@ public:
     virtual int getTimeSteps() = 0;
     virtual Target getTarget(int idx) = 0;
     virtual void update(float time) {}
+    virtual Coord getPositionAt(int idx, float time) = 0;
     virtual ~ITargetProvider() {}
 };

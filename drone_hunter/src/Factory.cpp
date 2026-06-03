@@ -2,7 +2,6 @@
 #include "engine/TargetProvider.h"
 #include "engine/FileConfigLoader.h"
 #include "engine/AnalyticalSolver.h"
-#include "interfaces/ITargetProvider.h"
 
 
 ITargetProvider* createProvider(

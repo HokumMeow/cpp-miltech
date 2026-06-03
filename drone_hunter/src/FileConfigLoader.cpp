@@ -80,3 +80,8 @@ void FileConfigLoader::load(){
 
     loaded_ = true;
 }
+
+FileConfigLoader::~FileConfigLoader() {
+    
+    
+}

@@ -16,15 +16,19 @@ using json = nlohmann::json;
 
 int main(int argc, char* argv[]) {
     
+    const char* path = nullptr;
+
     const auto kArgs = std::span<char*>(argv, static_cast<std::size_t>(argc));
     if (kArgs.size() < 2) {
-        std::cerr << "usage: drone_hunter <data_path>\n";
-        return 1;
+        path = "./data";
+        //std::cerr << "usage: drone_hunter <data_path>\n";
+        //return 1;
+
+    } else {
+        path = kArgs[1];  
     }
 
-    const char* path = kArgs[1];    
-
-    IConfigLoader*   loader  = createLoader(ConfigLoaderType::FILE, path);
+    IConfigLoader*   loader  = createConfigLoader(ConfigLoaderType::FILE, path);
     loader->load();
     float arrayTimeStep = loader->getConfig().arrayTimeStep;
 
@@ -35,15 +39,16 @@ int main(int argc, char* argv[]) {
     mission.init();
 
     while (mission.hasNext()) {
-        std::optional<DropPoint> dp = mission.step();
-        if (dp.has_value()) {
-            LOG("drop: (" << dp.value().coord.x << ", " << dp.value().coord.y << ")");
-        } else {
-            LOG("no solution for current target");
+        auto result = mission.step();
+        if (result.has_value()) {
+            LOG("Hit! drop at (" << result->dropPoint->x << ", " << result->dropPoint->y << ")");  
+            break;
         }
     }
 
     LOG("Simulation finished");
+
+    mission.saveResults(path);
 
     delete solver;
     delete targets;

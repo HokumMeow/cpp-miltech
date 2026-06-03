@@ -1,5 +1,8 @@
 #include "engine/MissionProcessor.h"
+#include <fstream>
+#include "json.hpp"
 
+using json = nlohmann::json;
 
 float length(Coord delta);
 
@@ -9,24 +12,23 @@ std::optional<SimStep> MissionProcessor::step() {
         int bestTarget = -1;
         float minTime = 1e9f;
         Coord targInterp;
-        Coord predicted;
 
         targets_->update(currentTime_);
 
         for (int i = 0; i < targetCount_; ++i) {
-            target_ = targets_->getTarget(i);
-
-            interpolate(currentTime_, config_.arrayTimeStep, i, timeSteps_, targets_, targInterp);
-
+            
+            targInterp = targets_->getPositionAt(i, currentTime_);
+            
             Coord delta = targInterp - dronePos_;
 
             D = length(delta);
             float totalTime = (D - solver_->getHorizDist()) / config_.attackSpeed + solver_->getBallisticTime();
 
-             for (int k = 0; k < 3; k++)
+            Coord localPred;
+            for (int k = 0; k < 3; k++)
             {
-                interpolate(currentTime_ + totalTime, config_.arrayTimeStep, i, timeSteps_, targets_, predicted);
-                delta = predicted - dronePos_;
+                localPred = targets_->getPositionAt(i, currentTime_ + totalTime);
+                delta = localPred - dronePos_;
                 D = length(delta);
                 totalTime = (D - solver_->getHorizDist()) / config_.attackSpeed + solver_->getBallisticTime();
             }            
@@ -58,18 +60,21 @@ std::optional<SimStep> MissionProcessor::step() {
             {
                 minTime = totalTime + timeToStop;
                 bestTarget = i;
-                bestPred_ = predicted;
+                bestPred_ = localPred;
             }            
         }
         
-        //DEBUG("  target=" << bestTarget << " state=" << droneState);
+        DEBUG("  target=" << bestTarget << " state=" << droneState_);
 
-        Coord delta = bestPred_ - dronePos_;
+        std::optional<Coord> firePoint = solver_->solve(dronePos_, bestPred_, config_.attackSpeed, config_.altitude, ammo_);
 
-        std::optional<Coord> firePoint = solver_->solve(dronePos_, target_.pos, config_.attackSpeed, config_.altitude, ammo_);
+        if (!firePoint.has_value())
+        {
+            return std::nullopt;
+        }
 
         float angleToTarget = atan2f(firePoint->y - dronePos_.y, firePoint->x - dronePos_.x);
-
+ 
         angleDiff_ = angleToTarget - currentDir_;
 
         while (angleDiff_ > PI)
@@ -156,7 +161,7 @@ std::optional<SimStep> MissionProcessor::step() {
         }
         }
 
-        //DEBUG("Step " << step << " pos=(" << dronePos_.x << "," << dronePos_.y << ")");
+        DEBUG("Step " << step_ << " pos=(" << dronePos_.x << "," << dronePos_.y << ")");
 
         Coord dir = { cosf(currentDir_), sinf(currentDir_) };
                 
@@ -172,6 +177,7 @@ std::optional<SimStep> MissionProcessor::step() {
         Coord hitDiff = simStep[step_ - 1].aimPoint - simStep[step_ - 1].predictedTarget;
         if (hitDiff.x * hitDiff.x + hitDiff.y * hitDiff.y <= config_.hitRadius * config_.hitRadius)
         {
+            targetHit_ = true;
             return simStep[step_ - 1];
         }
 
@@ -180,29 +186,47 @@ std::optional<SimStep> MissionProcessor::step() {
         return std::nullopt;
 }
 
+void MissionProcessor::saveResults(const char* path)
+{
+    json out;
+    out["totalSteps"] = step_;
+    out["steps"] = json::array();
+    
+    for ( int i = 0; i < step_; i++) {
+        json step;
+        step["position"]        = {{"x", simStep[i].pos.x}, {"y", simStep[i].pos.y}};
+        step["direction"]       = simStep[i].direction;
+        step["state"]           = simStep[i].state;
+        step["targetIndex"]     = simStep[i].targetIdx;
+        step["dropPoint"]       = {{"x", simStep[i].dropPoint->x},
+                                {"y", simStep[i].dropPoint->y}};
+        step["aimPoint"]        = {{"x", simStep[i].aimPoint.x},
+                                {"y", simStep[i].aimPoint.y}};
+        step["predictedTarget"] = {{"x", simStep[i].predictedTarget.x},
+                                {"y", simStep[i].predictedTarget.y}};
+        out["steps"].push_back(step);
+    }
+    std::ofstream fout(path + std::string("/simulation.json"));
+    fout << out.dump(2);
+    fout.close();
+}
+
 void MissionProcessor::init() {
     
     targetCount_ = targets_->getTargetCount();
-    timeSteps_ = targets_->getTimeSteps();
     config_ = loader_->getConfig();
     ammo_        = loader_->getAmmoParams();
     dronePos_    = config_.startPos;
     currentDir_ = config_.initialDir;
     accel_ = config_.attackSpeed * config_.attackSpeed / (2.f * config_.accelPath);
     solver_->precompute(config_.attackSpeed, config_.altitude, ammo_);
-    
+    droneState_     = STOPPED;
+    currentTime_    = 0.f;
+    angleDiff_      = 0.f;
+    prevBestTarget_ = -1;
 }
- 
+
 float length(Coord delta)
 {
     return sqrtf((delta.x) * (delta.x) + (delta.y) * (delta.y));
-}
-
-void interpolate(float t, float arrayTimeStep, int targetIndex, int timeSteps , Coord** targets, Coord &output)
-{
-    int idx = (int)floorf(t / arrayTimeStep) % timeSteps;
-    int next = (idx + 1) % timeSteps;
-    float frac = (t - idx * arrayTimeStep) / arrayTimeStep;
-    output.x = targets[targetIndex][idx].x + (targets[targetIndex][next].x - targets[targetIndex][idx].x) * frac;
-    output.y = targets[targetIndex][idx].y + (targets[targetIndex][next].y - targets[targetIndex][idx].y) * frac;
 }
