@@ -1,4 +1,4 @@
-#include "engine/TargetProvider.h"
+#include "providers/TargetProvider.h"
 #include <fstream>
 #include <iostream>
 #include <cmath>
@@ -6,27 +6,26 @@
 
 using json = nlohmann::json;
 
-JsonTargetProvider::JsonTargetProvider(const char* path, const float arrayTimeStep){
+JsonTargetProvider::JsonTargetProvider(const std::string& path, const float arrayTimeStep){
 
-    std::ifstream ft(path + std::string("/targets.json"));
+    std::ifstream ft(path + "/targets.json");
     json jt; ft >> jt;
     targetCount_ = jt["targetCount"];
     timeSteps_ = jt["timeSteps"];
     arrayTimeStep_ = arrayTimeStep;
-    targets = nullptr;
     if (targetCount_ <= 0) {
         std::cerr << "0 targets!" << std::endl;
         return;
     }
-    targets = new Coord*[targetCount_];
+    targets = std::vector<std::vector<Coord>>(targetCount_, std::vector<Coord>(timeSteps_));
+
     for (int i = 0; i < targetCount_; i++) {
-        targets[i] = new Coord[timeSteps_];
         for (int j = 0; j < timeSteps_; j++) {
             targets[i][j].x = jt["targets"][i]["positions"][j]["x"];
             targets[i][j].y = jt["targets"][i]["positions"][j]["y"];
         }
-    }
-    current_ = new Target[targetCount_]{};
+    } 
+    current_ = std::vector<Target>(targetCount_);
 
 };
 
@@ -43,18 +42,19 @@ void JsonTargetProvider::update(float time) {
 };
 
 Coord JsonTargetProvider::getPositionAt(int idx, float time) {
+
+    const std::vector<Coord>& targetCoords = targets.at(idx);
+
     int idx_ = (int)floorf(time / arrayTimeStep_) % timeSteps_;
     int next = (idx_ + 1) % timeSteps_;
     float frac = (time - idx_ * arrayTimeStep_) / arrayTimeStep_;
     return {
-        targets[idx][idx_].x + (targets[idx][next].x - targets[idx][idx_].x) * frac,
-        targets[idx][idx_].y + (targets[idx][next].y - targets[idx][idx_].y) * frac
+
+        targetCoords[idx_].x + (targetCoords[next].x - targetCoords[idx_].x) * frac,
+        targetCoords[idx_].y + (targetCoords[next].y - targetCoords[idx_].y) * frac
     };
 }
 
 JsonTargetProvider::~JsonTargetProvider() {
-    for (int i = 0; i < targetCount_; i++)
-    delete[] targets[i];
-    delete[] targets;
-    delete[] current_;
+    
 }

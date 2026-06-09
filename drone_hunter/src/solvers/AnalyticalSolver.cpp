@@ -1,6 +1,6 @@
 #include <optional>
 #include <cmath>
-#include "engine/AnalyticalSolver.h"
+#include "solvers/AnalyticalSolver.h"
 #include "dto/AmmoParams.h"
 #include "dto/Coord.h"
 

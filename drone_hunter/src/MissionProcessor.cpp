@@ -1,6 +1,8 @@
 #include "engine/MissionProcessor.h"
 #include <fstream>
+#include <string>
 #include "json.hpp"
+#include "Log.h"
 
 using json = nlohmann::json;
 
@@ -161,24 +163,26 @@ std::optional<SimStep> MissionProcessor::step() {
         }
         }
 
-        DEBUG("Step " << step_ << " pos=(" << dronePos_.x << "," << dronePos_.y << ")");
+        DEBUG("Step " << simStep.size() << " pos=(" << dronePos_.x << "," << dronePos_.y << ")");
 
         Coord dir = { cosf(currentDir_), sinf(currentDir_) };
-                
-        simStep[step_].pos = dronePos_;
-        simStep[step_].direction = currentDir_;
-        simStep[step_].state = droneState_;
-        simStep[step_].targetIdx = bestTarget;
-        simStep[step_].dropPoint = firePoint;
-        simStep[step_].aimPoint = dronePos_ + dir * solver_->getHorizDist();
-        simStep[step_].predictedTarget = bestPred_;
-        step_++;
 
-        Coord hitDiff = simStep[step_ - 1].aimPoint - simStep[step_ - 1].predictedTarget;
+        SimStep currentStep;
+
+        currentStep.pos = dronePos_;
+        currentStep.direction = currentDir_;
+        currentStep.state = droneState_;
+        currentStep.targetIdx = bestTarget;
+        currentStep.dropPoint = firePoint;
+        currentStep.aimPoint = dronePos_ + dir * solver_->getHorizDist();
+        currentStep.predictedTarget = bestPred_;
+        simStep.push_back(currentStep);
+
+        Coord hitDiff = simStep.back().aimPoint - simStep.back().predictedTarget;
         if (hitDiff.x * hitDiff.x + hitDiff.y * hitDiff.y <= config_.hitRadius * config_.hitRadius)
         {
             targetHit_ = true;
-            return simStep[step_ - 1];
+            return simStep.back();
         }
 
         prevBestTarget_ = bestTarget;
@@ -186,27 +190,27 @@ std::optional<SimStep> MissionProcessor::step() {
         return std::nullopt;
 }
 
-void MissionProcessor::saveResults(const char* path)
+void MissionProcessor::saveResults(const std::string& path)
 {
     json out;
-    out["totalSteps"] = step_;
+    out["totalSteps"] = simStep.size();
     out["steps"] = json::array();
     
-    for ( int i = 0; i < step_; i++) {
+    for (const auto& s : simStep){
         json step;
-        step["position"]        = {{"x", simStep[i].pos.x}, {"y", simStep[i].pos.y}};
-        step["direction"]       = simStep[i].direction;
-        step["state"]           = simStep[i].state;
-        step["targetIndex"]     = simStep[i].targetIdx;
-        step["dropPoint"]       = {{"x", simStep[i].dropPoint->x},
-                                {"y", simStep[i].dropPoint->y}};
-        step["aimPoint"]        = {{"x", simStep[i].aimPoint.x},
-                                {"y", simStep[i].aimPoint.y}};
-        step["predictedTarget"] = {{"x", simStep[i].predictedTarget.x},
-                                {"y", simStep[i].predictedTarget.y}};
+        step["position"]        = {{"x", s.pos.x}, {"y", s.pos.y}};
+        step["direction"]       = s.direction;
+        step["state"]           = s.state;
+        step["targetIndex"]     = s.targetIdx;
+        step["dropPoint"]       = {{"x", s.dropPoint->x},
+                                {"y", s.dropPoint->y}};
+        step["aimPoint"]        = {{"x", s.aimPoint.x},
+                                {"y", s.aimPoint.y}};
+        step["predictedTarget"] = {{"x", s.predictedTarget.x},
+                                {"y", s.predictedTarget.y}};
         out["steps"].push_back(step);
     }
-    std::ofstream fout(path + std::string("/simulation.json"));
+    std::ofstream fout(path + "/simulation.json");
     fout << out.dump(2);
     fout.close();
 }
@@ -224,6 +228,8 @@ void MissionProcessor::init() {
     currentTime_    = 0.f;
     angleDiff_      = 0.f;
     prevBestTarget_ = -1;
+    simStep.clear();
+    simStep.reserve(MAX_STEPS);
 }
 
 float length(Coord delta)

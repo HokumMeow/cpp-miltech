@@ -1,8 +1,8 @@
 #include <fstream>
-#include <cstring>
+#include <map>
 #include <iostream>
-#include "engine/FileConfigLoader.h"
-#include "engine/Log.h"
+#include "config/FileConfigLoader.h"
+#include "Log.h"
 
 #include "json.hpp"
 
@@ -10,7 +10,7 @@ using json = nlohmann::json;
 
 void FileConfigLoader::load(){
 
-    std::ifstream fin(path_ + std::string("/config.json"));
+    std::ifstream fin(path_ + "/config.json");
     if (!fin.is_open())
     {
         std::cerr << "Error opening config file" << std::endl;
@@ -33,8 +33,7 @@ void FileConfigLoader::load(){
     config_.hitRadius     = j["simulation"]["hitRadius"];
 
     std::string ammoStr = j["ammo"].get<std::string>();
-    std::strncpy(config_.ammoName, ammoStr.c_str(), 31);
-
+    config_.ammoName = ammoStr;
     LOG("Config loaded: x=" << config_.startPos.x);
     LOG("Config loaded: y=" << config_.startPos.y);
     LOG("Config loaded: speed=" << config_.attackSpeed);
@@ -48,7 +47,7 @@ void FileConfigLoader::load(){
 
     ////////////////////////////////////////////////////////////////////////
     // Читання JSON ammo
-    std::ifstream f_a(path_ + std::string("/ammo.json"));
+    std::ifstream f_a(path_ + "/ammo.json");
     if (!f_a.is_open())
     {
         std::cerr << "Error opening ammo file" << std::endl;
@@ -57,24 +56,24 @@ void FileConfigLoader::load(){
 
     json j_a;
     f_a >> j_a;
-    int ammoCount = j_a.size();
-    int selectedAmmo = -1;
-    for (int i = 0; i < ammoCount; i++) {
-        AmmoParams current;
-        std::strncpy(current.name, j_a[i]["name"].get<std::string>().c_str(), 31);
-        current.mass = j_a[i]["mass"];
-        current.drag = j_a[i]["drag"];
-        current.lift = j_a[i]["lift"];
-        if (strcmp(current.name, config_.ammoName) == 0) {
-            ammoParams_ = current; 
-            selectedAmmo = i;
-        }
-    }
-    if (selectedAmmo == -1)
+    std::map<std::string, AmmoParams> ammoTable;
+    for (auto& entry : j_a)
     {
+        AmmoParams current;
+        current.name = entry["name"].get<std::string>();
+        current.mass = entry["mass"];
+        current.drag = entry["drag"];
+        current.lift = entry["lift"];
+        ammoTable[current.name] = current;
+    }
+
+    auto it = ammoTable.find(config_.ammoName);
+    if (it == ammoTable.end()) {
+        
         std::cerr << "Unknown ammo!" << std::endl;
         return;
     }
+    ammoParams_ = it->second;
 
     LOG("Config loaded: ammo=" << config_.ammoName);
 

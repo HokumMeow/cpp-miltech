@@ -1,11 +1,12 @@
 #include "engine/Factory.h"
-#include "engine/TargetProvider.h"
-#include "engine/FileConfigLoader.h"
-#include "engine/AnalyticalSolver.h"
+#include <string>
+#include "providers/TargetProvider.h"
+#include "config/FileConfigLoader.h"
+#include "solvers/AnalyticalSolver.h"
 
 
 ITargetProvider* createProvider(
-    ProviderType type, const char* path, float arrayTimeStep) {
+    ProviderType type, const std::string& path, float arrayTimeStep) {
     switch (type) {
     case ProviderType::JSON:
         return new JsonTargetProvider(path, arrayTimeStep);
@@ -20,7 +21,7 @@ IBallisticSolver* createSolver(SolverType type) {
     }
 }
 
-IConfigLoader* createConfigLoader(ConfigLoaderType type, const char* path) {
+IConfigLoader* createConfigLoader(ConfigLoaderType type, const std::string& path) {
     switch (type) {
         case ConfigLoaderType::FILE: return new FileConfigLoader(path);
         default:                     return nullptr;

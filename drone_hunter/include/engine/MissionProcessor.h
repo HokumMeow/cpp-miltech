@@ -1,10 +1,10 @@
 #pragma once
+#include <vector>
 #include "interfaces/IBallisticSolver.h"
 #include "interfaces/ITargetProvider.h"
 #include "interfaces/IConfigLoader.h"
 #include "dto/DroneStates.h"
 #include "dto/SimStep.h"
-#include "engine/Log.h"
 
 class MissionProcessor {
 public:
@@ -12,10 +12,10 @@ public:
         : solver_(s), targets_(t), loader_(l) {}
 
     void init();
-    bool hasNext() const { return !targetHit_ && step_ < MAX_STEPS; }
+    bool hasNext() const { return !targetHit_ && simStep.size() < MAX_STEPS; }
     std::optional<SimStep> step();
     void reset() {
-        step_ = 0;
+        simStep.clear();
         currentTime_ = 0;
         dronePos_ = config_.startPos;
         droneState_ = STOPPED;
@@ -26,8 +26,8 @@ public:
         angleDiff_ = 0.f;
     }
     void changeSolver(IBallisticSolver* s) { solver_ = s; }
-    void saveResults(const char* path);
-    ~MissionProcessor() { delete[] simStep; }
+    void saveResults(const std::string& path);
+    ~MissionProcessor() { }
 private:
     
     IBallisticSolver* solver_;
@@ -39,10 +39,9 @@ private:
     DroneConfig config_;
     Coord bestPred_;
     static constexpr int MAX_STEPS = 10000;
-    SimStep* simStep = new SimStep[MAX_STEPS];
+    std::vector<SimStep> simStep;
     static constexpr float PI = 3.14159265f;
     float accel_;
-    int step_ = 0;
     int targetCount_ = 0;
     float currentDir_;
     float speed_ = 0.f;

@@ -4,7 +4,7 @@
 class FileConfigLoader : public IConfigLoader {
     
 public:
-    FileConfigLoader(const char* path) : path_(path) {};
+    FileConfigLoader(const std::string& path) : path_(path) {};
     void load() override;
     DroneConfig getConfig() override { return config_; }
     AmmoParams getAmmoParams() override { return ammoParams_; }
@@ -13,6 +13,6 @@ public:
 private:
     DroneConfig config_;
     AmmoParams ammoParams_;
-    const char* path_;
+    std::string path_;
     bool        loaded_ = false;
 };

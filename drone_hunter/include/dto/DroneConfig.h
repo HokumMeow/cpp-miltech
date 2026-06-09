@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 #include "dto/Coord.h"
 
 struct DroneConfig
@@ -8,7 +9,7 @@ struct DroneConfig
     float initialDir;    // початковий напрямок (рад)
     float attackSpeed;   // швидкість атаки (м/с)
     float accelPath;     // шлях розгону (м)
-    char ammoName[32];   // обрані боєприпаси
+    std::string ammoName; // обрані боєприпаси
     float arrayTimeStep; // крок часу масиву цілей
     float simTimeStep;   // крок симуляції
     float hitRadius;     // радіус влучення
