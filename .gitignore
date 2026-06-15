@@ -3,7 +3,7 @@ build/
 build-*/
 out/
 
-.cache/
+.cache
 
 # CMake генерує ці файли при in-source або ручних локальних збірках.
 CMakeCache.txt
