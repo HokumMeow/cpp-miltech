@@ -1,6 +1,9 @@
 #include "engine/MissionProcessor.h"
 #include <fstream>
 #include <string>
+#include "interfaces/IBallisticSolver.h"
+#include "interfaces/ITargetProvider.h"
+#include "interfaces/IConfigLoader.h"
 #include "json.hpp"
 #include "Log.h"
 

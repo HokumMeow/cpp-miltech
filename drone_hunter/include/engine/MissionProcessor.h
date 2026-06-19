@@ -1,10 +1,14 @@
 #pragma once
 #include <vector>
-#include "interfaces/IBallisticSolver.h"
-#include "interfaces/ITargetProvider.h"
-#include "interfaces/IConfigLoader.h"
+#include <string>
+#include "dto/AmmoParams.h"
+#include "dto/DroneConfig.h"
 #include "dto/DroneStates.h"
 #include "dto/SimStep.h"
+
+class IBallisticSolver;
+class ITargetProvider;
+class IConfigLoader;
 
 class MissionProcessor {
 public:

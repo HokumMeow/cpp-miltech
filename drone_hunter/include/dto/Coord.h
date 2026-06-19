@@ -1,5 +1,4 @@
 #pragma once
-#include <cmath>
 
 struct Coord
 {
@@ -41,7 +40,11 @@ struct Coord
     // порівняння координат
     bool operator==(const Coord& other) const {
         constexpr float eps = 1e-5f;
-        return std::abs(x - other.x) < eps && std::abs(y - other.y) < eps;
+        float dx = x - other.x;
+        float dy = y - other.y;
+        if (dx < 0.f) dx = -dx;
+        if (dy < 0.f) dy = -dy;
+        return dx < eps && dy < eps;
     }
     
 };

@@ -6,6 +6,7 @@
 
 #include "interfaces/IBallisticSolver.h"
 #include "interfaces/ITargetProvider.h"
+#include "interfaces/IConfigLoader.h"
 #include "engine/MissionProcessor.h"
 #include "engine/Factory.h"
 #include "Log.h"
@@ -27,12 +28,28 @@ int main(int argc, char* argv[]) {
     }
 
     IConfigLoader*   loader  = createConfigLoader(ConfigLoaderType::FILE, path);
+    if (!loader) {
+        std::cerr << "Failed to create config loader" << std::endl;
+        return 1;
+    }
     loader->load();
     float arrayTimeStep = loader->getConfig().arrayTimeStep;
 
     ITargetProvider* targets = createProvider(ProviderType::JSON, path, arrayTimeStep);
+    if (!targets) {
+        std::cerr << "Failed to create target provider" << std::endl;
+        delete loader;
+        return 1;
+    }
+
     IBallisticSolver* solver = createSolver(SolverType::ANALYTICAL);
-            
+    if (!solver) {
+        std::cerr << "Failed to create ballistic solver" << std::endl;
+        delete targets;
+        delete loader;
+        return 1;
+    }
+
     MissionProcessor mission(solver, targets, loader);
     mission.init();
 
