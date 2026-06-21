@@ -21,6 +21,11 @@ add_executable(drone_hunter
     src/providers/TargetProvider.cpp
     src/config/FileConfigLoader.cpp
     src/MissionProcessor.cpp
+    src/states/StateStopped.cpp
+    src/states/StateAccelerating.cpp
+    src/states/StateDecelerating.cpp
+    src/states/StateMoving.cpp
+    src/states/StateTurning.cpp
 )
 
 target_include_directories(drone_hunter PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
