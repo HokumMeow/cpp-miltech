@@ -1,4 +1,5 @@
 #pragma once
+#include <memory>
 #include <vector>
 #include <string>
 #include "dto/AmmoParams.h"
@@ -6,14 +7,20 @@
 #include "dto/DroneStates.h"
 #include "dto/SimStep.h"
 
-class IBallisticSolver;
+// Forward declarations for interfaces
 class ITargetProvider;
+class IBallisticSolver;
 class IConfigLoader;
 
 class MissionProcessor {
 public:
-    MissionProcessor(IBallisticSolver* s, ITargetProvider* t, IConfigLoader* l)
-        : solver_(s), targets_(t), loader_(l) {}
+    MissionProcessor(
+        std::unique_ptr<IBallisticSolver> s,
+        std::unique_ptr<ITargetProvider> t,
+        std::unique_ptr<IConfigLoader> c)
+        : solver_(std::move(s)),
+          targets_(std::move(t)), 
+          loader_(std::move(c)) {}
 
     void init();
     bool hasNext() const { return !targetHit_ && simStep.size() < MAX_STEPS; }
@@ -29,14 +36,13 @@ public:
         targetHit_ = false;
         angleDiff_ = 0.f;
     }
-    void changeSolver(IBallisticSolver* s) { solver_ = s; }
+    void changeSolver(std::unique_ptr<IBallisticSolver> s) { solver_ = std::move(s); }
     void saveResults(const std::string& path);
-    ~MissionProcessor() { }
 private:
     
-    IBallisticSolver* solver_;
-    ITargetProvider*  targets_;
-    IConfigLoader*    loader_;
+    std::unique_ptr<IBallisticSolver> solver_;
+    std::unique_ptr<ITargetProvider> targets_;
+    std::unique_ptr<IConfigLoader> loader_;
     Coord dronePos_;
     AmmoParams ammo_;
     DroneState droneState_;
