@@ -43,7 +43,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    auto solver = createSolver(SolverType::ANALYTICAL);
+    auto solver = createSolver(SolverType::ANALYTICAL, path);
     if (!solver) {
         std::cerr << "Failed to create ballistic solver" << std::endl;
         return 1;

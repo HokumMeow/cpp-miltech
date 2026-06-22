@@ -1,4 +1,5 @@
 #pragma once
+#include <cmath>
 
 struct Coord
 {
@@ -46,5 +47,9 @@ struct Coord
         if (dy < 0.f) dy = -dy;
         return dx < eps && dy < eps;
     }
-    
+
+    // одиничний вектор того ж напрямку
+    Coord normalize() const {
+        return *this / hypotf(x, y);
+    }
 };

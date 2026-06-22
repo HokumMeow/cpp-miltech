@@ -4,6 +4,7 @@
 #include "providers/TargetProvider.h"
 #include "config/FileConfigLoader.h"
 #include "solvers/AnalyticalSolver.h"
+#include "solvers/TableSolver.h"
 
 
 std::unique_ptr<ITargetProvider> createProvider(
@@ -15,9 +16,10 @@ std::unique_ptr<ITargetProvider> createProvider(
     }
 }
 
-std::unique_ptr<IBallisticSolver> createSolver(SolverType type) {
+std::unique_ptr<IBallisticSolver> createSolver(SolverType type, const std::string& path) {
     switch (type) {
         case SolverType::ANALYTICAL: return std::make_unique<AnalyticalSolver>();
+        case SolverType::TABLE:      return std::make_unique<TableSolver>(path + "/ballistic_table.txt");
         default:                     return nullptr;
     }
 }

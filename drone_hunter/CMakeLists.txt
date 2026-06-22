@@ -18,6 +18,7 @@ add_executable(drone_hunter
     src/main.cpp
     src/Factory.cpp
     src/solvers/AnalyticalSolver.cpp
+    src/solvers/TableSolver.cpp
     src/providers/TargetProvider.cpp
     src/config/FileConfigLoader.cpp
     src/MissionProcessor.cpp
