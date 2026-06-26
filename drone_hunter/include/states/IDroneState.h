@@ -1,14 +1,17 @@
 #pragma once
 #include <memory>
+#include "dto/DroneCommand.h"
 #include "dto/DroneContext.h"
 
 class IDroneState {
 public:
  virtual ~IDroneState() = default;
- // Виконати логіку стану, повернути наступний стан.
+ // Вирішити, чи час переходити в інший стан (рішення, не виконання).
  // Якщо стан не змінився — повернути nullptr
  // (головний цикл залишить поточний).
  virtual std::unique_ptr<IDroneState> execute(DroneContext& ctx) = 0;
+ // Команда, яку треба надіслати DronePhysics, поки активний цей стан.
+ virtual DroneCommand command(const DroneContext& ctx) const = 0;
  virtual float timeToStop(const DroneContext&) const = 0;
  virtual const char* name() const = 0;
 

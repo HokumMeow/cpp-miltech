@@ -13,15 +13,18 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_library(json INTERFACE)
 target_include_directories(json INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
+find_package(Threads REQUIRED)
+
 # Виконуваний файл
 add_executable(drone_hunter
     src/main.cpp
     src/Factory.cpp
     src/solvers/AnalyticalSolver.cpp
     src/solvers/TableSolver.cpp
-    src/providers/TargetProvider.cpp
+    src/providers/ThreadSafeTargetProvider.cpp
     src/config/FileConfigLoader.cpp
     src/MissionProcessor.cpp
+    src/DronePhysics.cpp
     src/states/StateStopped.cpp
     src/states/StateAccelerating.cpp
     src/states/StateDecelerating.cpp
@@ -30,6 +33,6 @@ add_executable(drone_hunter
 )
 
 target_include_directories(drone_hunter PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_link_libraries(drone_hunter PRIVATE json)
+target_link_libraries(drone_hunter PRIVATE json Threads::Threads)
 
 target_compile_options(drone_hunter PRIVATE -Wall -Wextra -pedantic)

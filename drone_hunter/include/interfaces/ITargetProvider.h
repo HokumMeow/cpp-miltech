@@ -1,12 +1,14 @@
 #pragma once
 #include "dto/Target.h"
+#include "interfaces/IThreadedComponent.h"
 
-class ITargetProvider {
+// Назовні цілі видно лише як знімок поточних значень під мьютексом.
+// Жодних запитів "де ціль була/буде" у довільний момент часу — це
+// узгоджено з тим, що джерело даних може бути не лише файлом траєкторій,
+// а й зовнішньою телеметрією, яка знає тільки "зараз".
+class ITargetProvider : public IThreadedComponent {
 public:
-    virtual int getTargetCount() = 0;
-    virtual int getTimeSteps() = 0;
-    virtual Target getTarget(int idx) = 0;
-    virtual void update(float time) {}
-    virtual Coord getPositionAt(int idx, float time) = 0;
-    virtual ~ITargetProvider() {}
+    virtual int getTargetCount() const = 0;
+    virtual Target getTarget(int idx) const = 0;
+    virtual ~ITargetProvider() override {}
 };

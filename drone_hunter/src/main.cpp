@@ -3,11 +3,14 @@
 #include <cmath>
 #include <memory>
 #include <span>
+#include <thread>
+#include <chrono>
 
 #include "json.hpp"
 
 #include "interfaces/IBallisticSolver.h"
 #include "interfaces/ITargetProvider.h"
+#include "interfaces/IDronePhysics.h"
 #include "interfaces/IConfigLoader.h"
 #include "engine/MissionProcessor.h"
 #include "engine/Factory.h"
@@ -17,7 +20,7 @@ using namespace std;
 using json = nlohmann::json;
 
 int main(int argc, char* argv[]) {
-    
+
     std::string path;
 
     const auto kArgs = std::span<char*>(argv, static_cast<std::size_t>(argc));
@@ -26,7 +29,7 @@ int main(int argc, char* argv[]) {
         LOG("using default data path: " << path << "\n");
         LOG("usage custom data path: drone_hunter <data_path>\n");
     } else {
-        path = kArgs[1];  
+        path = kArgs[1];
     }
 
     auto loader = createConfigLoader(ConfigLoaderType::FILE, path);
@@ -35,11 +38,20 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     loader->load();
-    float arrayTimeStep = loader->getConfig().arrayTimeStep;
+    const DroneConfig cfg = loader->getConfig();
 
-    auto targets = createProvider(ProviderType::JSON, path, arrayTimeStep);
-    if (!targets) {
+    auto provider = createProvider(ProviderType::JSON, path, cfg.arrayTimeStep,
+                                    cfg.targetTimeStep, cfg.timeScale);
+    if (!provider) {
         std::cerr << "Failed to create target provider" << std::endl;
+        return 1;
+    }
+
+    auto physics = createPhysics(PhysicsType::SIMULATED, cfg.startPos, cfg.initialDir,
+                                  cfg.attackSpeed, cfg.accelPath,
+                                  cfg.physicsTimeStep, cfg.timeScale);
+    if (!physics) {
+        std::cerr << "Failed to create drone physics" << std::endl;
         return 1;
     }
 
@@ -49,16 +61,22 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    MissionProcessor mission(std::move(solver), std::move(targets), std::move(loader));
-    mission.init();
+    MissionProcessor mission(std::move(solver), std::move(loader), *provider, *physics);
 
-    while (mission.hasNext()) {
-        auto result = mission.step();
-        if (result.has_value()) {
-            LOG("Hit! drop at (" << result->dropPoint->x << ", " << result->dropPoint->y << ")");  
-            break;
-        }
+    std::thread missionThread(&MissionProcessor::run, &mission);
+
+    while (!provider->isThreadReady() || !physics->isThreadReady() || !mission.isThreadReady()) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
+
+    provider->start();
+    physics->start();
+    mission.start();
+
+    missionThread.join(); // чекаємо завершення місії
+
+    physics->stop();  // прапорець + join всередині
+    provider->stop();
 
     LOG("Simulation finished");
 
