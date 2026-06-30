@@ -17,9 +17,9 @@ target_include_directories(json INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 add_executable(drone_hunter
     src/main.cpp
     src/Factory.cpp
-    src/AnalyticalSolver.cpp
-    src/TargetProvider.cpp
-    src/FileConfigLoader.cpp
+    src/solvers/AnalyticalSolver.cpp
+    src/providers/TargetProvider.cpp
+    src/config/FileConfigLoader.cpp
     src/MissionProcessor.cpp
 )
 
