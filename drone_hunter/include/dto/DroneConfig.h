@@ -16,7 +16,7 @@ struct DroneConfig
     float angularSpeed;  // кутова швидкість (рад/с)
     float turnThreshold; // поріг повороту (рад)
 
-    float targetTimeStep  = 0.05f; // крок потоку ThreadSafeTargetProvider
-    float physicsTimeStep = 0.01f; // крок потоку DronePhysics
-    float timeScale       = 10.f;  // прискорення симуляції відносно реального часу
+    float targetTimeStep  = 0.05f;
+    float physicsTimeStep = 0.01f;
+    float timeScale       = 10.f;
 };

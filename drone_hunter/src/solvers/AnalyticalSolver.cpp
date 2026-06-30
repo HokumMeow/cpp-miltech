@@ -47,7 +47,7 @@ float calc_h(const AmmoParams& a, float attackSpeed, float t)
     return result;
 }
 
-} // namespace
+}
 
 std::optional<Coord> AnalyticalSolver::solve(Coord dronePos, Coord targetPos,
                 float speed, float alt, const AmmoParams& ammo

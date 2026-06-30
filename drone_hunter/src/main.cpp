@@ -63,7 +63,9 @@ int main(int argc, char* argv[]) {
 
     MissionProcessor mission(std::move(solver), std::move(loader), *provider, *physics);
 
-    std::thread missionThread(&MissionProcessor::run, &mission);
+    std::thread providerThread([&provider] { provider->run(); });
+    std::thread physicsThread ([&physics]  { physics->run();  });
+    std::thread missionThread (&MissionProcessor::run, &mission);
 
     while (!provider->isThreadReady() || !physics->isThreadReady() || !mission.isThreadReady()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -73,12 +75,13 @@ int main(int argc, char* argv[]) {
     physics->start();
     mission.start();
 
-    missionThread.join(); // чекаємо завершення місії
+    missionThread.join();
 
-    physics->stop();  // прапорець + join всередині
+    physics->stop();
     provider->stop();
 
-    LOG("Simulation finished");
+    physicsThread.join();
+    providerThread.join();
 
     mission.saveResults(path);
 

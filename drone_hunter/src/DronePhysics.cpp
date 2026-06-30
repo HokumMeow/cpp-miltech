@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <thread>
 
 DronePhysics::DronePhysics(Coord startPos, float initialDirection, float attackSpeed,
                             float accelPath, float physicsTimeStep, float timeScale)
@@ -11,11 +12,6 @@ DronePhysics::DronePhysics(Coord startPos, float initialDirection, float attackS
       timeScale_(timeScale),
       pos_(startPos),
       direction_(initialDirection) {
-    thread_ = std::thread(&DronePhysics::run, this);
-}
-
-DronePhysics::~DronePhysics() {
-    stop();
 }
 
 void DronePhysics::integrate(float dt) {
@@ -53,7 +49,7 @@ void DronePhysics::run() {
 
     while (!stopFlag_.load()) {
         while (auto next = queue_.tryPop()) {
-            currentCmd_ = *next; // лишаємо лише найновішу команду
+            currentCmd_ = *next;
         }
         integrate(physicsTimeStep_);
         std::this_thread::sleep_for(std::chrono::duration<float>(physicsTimeStep_ / timeScale_));
@@ -72,5 +68,4 @@ DroneTelemetry DronePhysics::getTelemetry() const {
 
 void DronePhysics::stop() {
     stopFlag_.store(true);
-    if (thread_.joinable()) thread_.join();
 }
