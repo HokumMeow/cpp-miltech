@@ -1,29 +1,32 @@
 #include "engine/Factory.h"
+#include <memory>
 #include <string>
 #include "providers/TargetProvider.h"
 #include "config/FileConfigLoader.h"
 #include "solvers/AnalyticalSolver.h"
+#include "solvers/TableSolver.h"
 
 
-ITargetProvider* createProvider(
+std::unique_ptr<ITargetProvider> createProvider(
     ProviderType type, const std::string& path, float arrayTimeStep) {
     switch (type) {
     case ProviderType::JSON:
-        return new JsonTargetProvider(path, arrayTimeStep);
+        return std::make_unique<JsonTargetProvider>(path, arrayTimeStep);
     default: return nullptr;
     }
 }
 
-IBallisticSolver* createSolver(SolverType type) {
+std::unique_ptr<IBallisticSolver> createSolver(SolverType type, const std::string& path) {
     switch (type) {
-        case SolverType::ANALYTICAL: return new AnalyticalSolver();
+        case SolverType::ANALYTICAL: return std::make_unique<AnalyticalSolver>();
+        case SolverType::TABLE:      return std::make_unique<TableSolver>(path + "/ballistic_table.txt");
         default:                     return nullptr;
     }
 }
 
-IConfigLoader* createConfigLoader(ConfigLoaderType type, const std::string& path) {
+std::unique_ptr<IConfigLoader> createConfigLoader(ConfigLoaderType type, const std::string& path) {
     switch (type) {
-        case ConfigLoaderType::FILE: return new FileConfigLoader(path);
+        case ConfigLoaderType::FILE: return std::make_unique<FileConfigLoader>(path);
         default:                     return nullptr;
     }
 }

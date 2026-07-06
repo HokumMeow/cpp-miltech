@@ -1,6 +1,8 @@
 #include <iostream>
 #include <cstring>
 #include <cmath>
+#include <memory>
+#include <span>
 
 #include "json.hpp"
 
@@ -27,7 +29,7 @@ int main(int argc, char* argv[]) {
         path = kArgs[1];  
     }
 
-    IConfigLoader*   loader  = createConfigLoader(ConfigLoaderType::FILE, path);
+    auto loader = createConfigLoader(ConfigLoaderType::FILE, path);
     if (!loader) {
         std::cerr << "Failed to create config loader" << std::endl;
         return 1;
@@ -35,22 +37,19 @@ int main(int argc, char* argv[]) {
     loader->load();
     float arrayTimeStep = loader->getConfig().arrayTimeStep;
 
-    ITargetProvider* targets = createProvider(ProviderType::JSON, path, arrayTimeStep);
+    auto targets = createProvider(ProviderType::JSON, path, arrayTimeStep);
     if (!targets) {
         std::cerr << "Failed to create target provider" << std::endl;
-        delete loader;
         return 1;
     }
 
-    IBallisticSolver* solver = createSolver(SolverType::ANALYTICAL);
+    auto solver = createSolver(SolverType::ANALYTICAL, path);
     if (!solver) {
         std::cerr << "Failed to create ballistic solver" << std::endl;
-        delete targets;
-        delete loader;
         return 1;
     }
 
-    MissionProcessor mission(solver, targets, loader);
+    MissionProcessor mission(std::move(solver), std::move(targets), std::move(loader));
     mission.init();
 
     while (mission.hasNext()) {
@@ -64,10 +63,6 @@ int main(int argc, char* argv[]) {
     LOG("Simulation finished");
 
     mission.saveResults(path);
-
-    delete solver;
-    delete targets;
-    delete loader;
 
     return 0;
 }
