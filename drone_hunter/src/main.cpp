@@ -22,14 +22,27 @@ using json = nlohmann::json;
 int main(int argc, char* argv[]) {
 
     std::string path;
+    SolverType solverType = SolverType::TABLE;
 
     const auto kArgs = std::span<char*>(argv, static_cast<std::size_t>(argc));
     if (kArgs.size() < 2) {
         path = "./data";
         LOG("using default data path: " << path << "\n");
-        LOG("usage custom data path: drone_hunter <data_path>\n");
+        LOG("usage: drone_hunter <data_path> [analytical|table]\n");
     } else {
         path = kArgs[1];
+    }
+
+    if (kArgs.size() >= 3) {
+        const std::string solverArg = kArgs[2];
+        if (solverArg == "analytical") {
+            solverType = SolverType::ANALYTICAL;
+        } else if (solverArg == "table") {
+            solverType = SolverType::TABLE;
+        } else {
+            std::cerr << "Unknown solver type: " << solverArg << " (expected 'analytical' or 'table')" << std::endl;
+            return 1;
+        }
     }
 
     auto loader = createConfigLoader(ConfigLoaderType::FILE, path);
@@ -55,7 +68,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    auto solver = createSolver(SolverType::ANALYTICAL, path);
+    auto solver = createSolver(solverType, path);
     if (!solver) {
         std::cerr << "Failed to create ballistic solver" << std::endl;
         return 1;
