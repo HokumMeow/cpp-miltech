@@ -1,9 +1,13 @@
 #include "engine/MissionProcessor.h"
+#include <chrono>
+#include <cmath>
 #include <fstream>
-#include <string>
+#include <thread>
+#include "dto/DroneTelemetry.h"
 #include "interfaces/IBallisticSolver.h"
-#include "interfaces/ITargetProvider.h"
 #include "interfaces/IConfigLoader.h"
+#include "interfaces/IDronePhysics.h"
+#include "interfaces/ITargetProvider.h"
 #include "states/StateStopped.h"
 #include "json.hpp"
 #include "Log.h"
@@ -14,16 +18,20 @@ float length(Coord delta);
 
 std::optional<SimStep> MissionProcessor::step() {
 
+        DroneTelemetry tel = physics_.getTelemetry();
+        ctx_.pos       = tel.pos;
+        ctx_.direction = tel.direction;
+        ctx_.speed     = std::hypot(tel.speed.x, tel.speed.y);
+
         float D = 0.f;
         int bestTarget = -1;
         float minTime = 1e9f;
         Coord targInterp;
 
-        targets_->update(currentTime_);
-
         for (int i = 0; i < targetCount_; ++i) {
 
-            targInterp = targets_->getPositionAt(i, currentTime_);
+            Target tgt = targets_.getTarget(i);
+            targInterp = tgt.pos;
 
             Coord delta = targInterp - ctx_.pos;
 
@@ -33,7 +41,7 @@ std::optional<SimStep> MissionProcessor::step() {
             Coord localPred;
             for (int k = 0; k < 3; k++)
             {
-                localPred = targets_->getPositionAt(i, currentTime_ + totalTime);
+                localPred = tgt.pos + tgt.velocity * totalTime;
                 delta = localPred - ctx_.pos;
                 D = length(delta);
                 totalTime = (D - solver_->getHorizDist()) / config_.attackSpeed + solver_->getBallisticTime();
@@ -78,6 +86,8 @@ std::optional<SimStep> MissionProcessor::step() {
         auto next = state_->execute(ctx_);
         if (next) state_ = std::move(next);
 
+        physics_.sendCommand(state_->command(ctx_));
+
         DEBUG("Step " << simStep.size() << " pos=(" << ctx_.pos.x << "," << ctx_.pos.y << ")");
 
         Coord dir = { cosf(ctx_.direction), sinf(ctx_.direction) };
@@ -91,6 +101,7 @@ std::optional<SimStep> MissionProcessor::step() {
         currentStep.dropPoint = firePoint;
         currentStep.aimPoint = ctx_.pos + dir * solver_->getHorizDist();
         currentStep.predictedTarget = bestPred_;
+        currentStep.timeSecSinceStart = tel.timeSecSinceStart;
         simStep.push_back(currentStep);
 
         Coord hitDiff = simStep.back().aimPoint - simStep.back().predictedTarget;
@@ -101,7 +112,6 @@ std::optional<SimStep> MissionProcessor::step() {
         }
 
         prevBestTarget_ = bestTarget;
-        currentTime_ += config_.simTimeStep;
         return std::nullopt;
 }
 
@@ -123,6 +133,7 @@ void MissionProcessor::saveResults(const std::string& path)
                                 {"y", s.aimPoint.y}};
         step["predictedTarget"] = {{"x", s.predictedTarget.x},
                                 {"y", s.predictedTarget.y}};
+        step["timeSecSinceStart"] = s.timeSecSinceStart;
         out["steps"].push_back(step);
     }
     std::ofstream fout(path + "/simulation.json");
@@ -132,33 +143,35 @@ void MissionProcessor::saveResults(const std::string& path)
 
 void MissionProcessor::init() {
 
-    targetCount_ = targets_->getTargetCount();
+    targetCount_ = targets_.getTargetCount();
     config_ = loader_->getConfig();
     ammo_        = loader_->getAmmoParams();
     ctx_.cfg     = &config_;
-    ctx_.pos     = config_.startPos;
-    ctx_.direction = config_.initialDir;
-    ctx_.speed   = 0.f;
-    ctx_.angleDiff = 0.f;
     ctx_.accel   = config_.attackSpeed * config_.attackSpeed / (2.f * config_.accelPath);
     solver_->precompute(config_.attackSpeed, config_.altitude, ammo_);
     state_          = std::make_unique<StateStopped>();
-    currentTime_    = 0.f;
     prevBestTarget_ = -1;
     simStep.clear();
     simStep.reserve(MAX_STEPS);
 }
 
-void MissionProcessor::reset() {
-    simStep.clear();
-    currentTime_ = 0;
-    ctx_.pos = config_.startPos;
-    ctx_.direction = config_.initialDir;
-    ctx_.speed = 0.f;
-    ctx_.angleDiff = 0.f;
-    state_ = std::make_unique<StateStopped>();
-    prevBestTarget_ = -1;
-    targetHit_ = false;
+void MissionProcessor::run() {
+    init();
+    ready_.store(true);
+    while (!started_.load()) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+
+    while (hasNext()) {
+        auto result = step();
+        if (result.has_value()) {
+            LOG("Hit! drop at (" << result->dropPoint->x << ", " << result->dropPoint->y << ")");
+            break;
+        }
+        std::this_thread::sleep_for(std::chrono::duration<float>(config_.simTimeStep / config_.timeScale));
+    }
+
+    LOG("Simulation finished");
 }
 
 float length(Coord delta)

@@ -6,10 +6,13 @@
 
 std::unique_ptr<IDroneState> StateStopped::execute(DroneContext& ctx) {
     if (std::fabs(ctx.angleDiff) < ctx.cfg->turnThreshold) {
-        ctx.angleDiff = 0.f;
         return std::make_unique<StateAccelerating>();
     }
     return std::make_unique<StateTurning>();
+}
+
+DroneCommand StateStopped::command(const DroneContext&) const {
+    return {DroneState::Stopped, 0.f};
 }
 
 float StateStopped::timeToStop(const DroneContext&) const {

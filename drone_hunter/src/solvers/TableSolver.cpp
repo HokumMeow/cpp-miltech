@@ -24,7 +24,7 @@ Interp findInterp(float val, const std::vector<float>& axis) {
     return {i, frac};
 }
 
-} // namespace
+}
 
 bool BallisticTable::load(const std::string& path) {
     std::ifstream f(path);

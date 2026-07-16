@@ -12,4 +12,5 @@ struct SimStep
     std::optional<Coord> dropPoint;       // точка скиду (куди летить дрон)
     Coord aimPoint;        // куди впаде бомба (якщо скинути зараз)
     Coord predictedTarget; // прогнозована позиція цілі
+    float timeSecSinceStart; // момент фізики, на який знято цей знімок
 };

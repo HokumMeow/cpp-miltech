@@ -4,17 +4,14 @@
 #include "states/StateMoving.h"
 
 std::unique_ptr<IDroneState> StateAccelerating::execute(DroneContext& ctx) {
-    ctx.speed += ctx.accel * ctx.cfg->simTimeStep;
-
-    std::unique_ptr<IDroneState> next;
     if (ctx.speed >= ctx.cfg->attackSpeed) {
-        ctx.speed = ctx.cfg->attackSpeed;
-        next = std::make_unique<StateMoving>();
+        return std::make_unique<StateMoving>();
     }
+    return nullptr;
+}
 
-    ctx.pos.x += ctx.speed * std::cos(ctx.direction) * ctx.cfg->simTimeStep;
-    ctx.pos.y += ctx.speed * std::sin(ctx.direction) * ctx.cfg->simTimeStep;
-    return next;
+DroneCommand StateAccelerating::command(const DroneContext&) const {
+    return {DroneState::Accelerating, 0.f};
 }
 
 float StateAccelerating::timeToStop(const DroneContext& ctx) const {

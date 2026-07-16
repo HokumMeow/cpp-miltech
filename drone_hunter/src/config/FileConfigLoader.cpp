@@ -32,6 +32,10 @@ void FileConfigLoader::load(){
     config_.simTimeStep   = j["simulation"]["timeStep"];
     config_.hitRadius     = j["simulation"]["hitRadius"];
 
+    config_.targetTimeStep  = j["simulation"].value("targetTimeStep", config_.targetTimeStep);
+    config_.physicsTimeStep = j["simulation"].value("physicsTimeStep", config_.physicsTimeStep);
+    config_.timeScale       = j["simulation"].value("timeScale", config_.timeScale);
+
     std::string ammoStr = j["ammo"].get<std::string>();
     config_.ammoName = ammoStr;
     LOG("Config loaded: x=" << config_.startPos.x);

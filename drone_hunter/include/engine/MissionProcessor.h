@@ -1,4 +1,5 @@
 #pragma once
+#include <atomic>
 #include <memory>
 #include <vector>
 #include <string>
@@ -10,6 +11,7 @@
 
 // Forward declarations for interfaces
 class ITargetProvider;
+class IDronePhysics;
 class IBallisticSolver;
 class IConfigLoader;
 
@@ -17,23 +19,28 @@ class MissionProcessor {
 public:
     MissionProcessor(
         std::unique_ptr<IBallisticSolver> s,
-        std::unique_ptr<ITargetProvider> t,
-        std::unique_ptr<IConfigLoader> c)
+        std::unique_ptr<IConfigLoader> c,
+        ITargetProvider& targets,
+        IDronePhysics& physics)
         : solver_(std::move(s)),
-          targets_(std::move(t)),
-          loader_(std::move(c)) {}
+          loader_(std::move(c)),
+          targets_(targets),
+          physics_(physics) {}
 
     void init();
     bool hasNext() const { return !targetHit_ && simStep.size() < MAX_STEPS; }
     std::optional<SimStep> step();
-    void reset();
+    void run();
+    bool isThreadReady() const { return ready_.load(); }
+    void start() { started_.store(true); }
     void changeSolver(std::unique_ptr<IBallisticSolver> s) { solver_ = std::move(s); }
     void saveResults(const std::string& path);
 private:
 
     std::unique_ptr<IBallisticSolver> solver_;
-    std::unique_ptr<ITargetProvider> targets_;
     std::unique_ptr<IConfigLoader> loader_;
+    ITargetProvider& targets_;
+    IDronePhysics& physics_;
     std::unique_ptr<IDroneState> state_;
     DroneContext ctx_;
     AmmoParams ammo_;
@@ -43,7 +50,8 @@ private:
     std::vector<SimStep> simStep;
     static constexpr float PI = 3.14159265f;
     int targetCount_ = 0;
-    float currentTime_;
-    int prevBestTarget_;
+    int prevBestTarget_ = -1;
     bool targetHit_ = false;
+    std::atomic<bool> ready_{false};
+    std::atomic<bool> started_{false};
 };

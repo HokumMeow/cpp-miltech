@@ -7,13 +7,11 @@ std::unique_ptr<IDroneState> StateMoving::execute(DroneContext& ctx) {
     if (std::fabs(ctx.angleDiff) > ctx.cfg->turnThreshold) {
         return std::make_unique<StateDecelerating>();
     }
-
-    if (std::fabs(ctx.angleDiff) < ctx.cfg->turnThreshold) {
-        ctx.direction = ctx.angleToTarget;
-    }
-    ctx.pos.x += ctx.speed * std::cos(ctx.direction) * ctx.cfg->simTimeStep;
-    ctx.pos.y += ctx.speed * std::sin(ctx.direction) * ctx.cfg->simTimeStep;
     return nullptr;
+}
+
+DroneCommand StateMoving::command(const DroneContext&) const {
+    return {DroneState::Moving, 0.f};
 }
 
 float StateMoving::timeToStop(const DroneContext& ctx) const {

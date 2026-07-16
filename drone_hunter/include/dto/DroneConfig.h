@@ -15,4 +15,8 @@ struct DroneConfig
     float hitRadius;     // радіус влучення
     float angularSpeed;  // кутова швидкість (рад/с)
     float turnThreshold; // поріг повороту (рад)
+
+    float targetTimeStep  = 0.05f;
+    float physicsTimeStep = 0.01f;
+    float timeScale       = 10.f;
 };
