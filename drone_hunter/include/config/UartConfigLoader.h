@@ -1,6 +1,6 @@
 #pragma once
 #include "interfaces/IConfigLoader.h"
-#include <link/UartLink.h>
+#include "link/UartLink.h"
 
 class UartConfigLoader : public IConfigLoader {
     
