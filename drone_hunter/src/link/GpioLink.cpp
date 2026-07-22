@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include "link/GpioLink.h"
 
-GpioLink::GpioLink(const char* chipPath, unsigned startLine, unsigned dropLine) 
-    : startLine_(startLine), dropLine_(dropLine) {
+GpioLink::GpioLink(const char* chipPath, unsigned startLine, unsigned dropLine)
+    : chip_(nullptr), request_(nullptr), startLine_(startLine), dropLine_(dropLine) {
     chip_ = gpiod_chip_open(chipPath);
     if (!chip_) { perror("gpiod_chip_open"); return ; }
 
@@ -18,21 +18,28 @@ GpioLink::GpioLink(const char* chipPath, unsigned startLine, unsigned dropLine)
     gpiod_request_config *req_cfg = gpiod_request_config_new();
     gpiod_request_config_set_consumer(req_cfg, "drone_hunter");
     request_ = gpiod_chip_request_lines(chip_, req_cfg, line_cfg);
- 
-    if (!request_) { perror("gpiod_chip_request_lines"); return ; }
 
+    // gpiod_chip_request_lines() копіює налаштування собі — тимчасові
+    // config-об'єкти більше не потрібні незалежно від результату.
+    gpiod_request_config_free(req_cfg);
+    gpiod_line_config_free(line_cfg);
+    gpiod_line_settings_free(settings_output);
+
+    if (!request_) { perror("gpiod_chip_request_lines"); return ; }
 }
 
 void GpioLink::raiseStart() {
+    if (!request_) return;  // чип/лінії не вдалося отримати при конструюванні
     gpiod_line_request_set_value(request_, startLine_, GPIOD_LINE_VALUE_ACTIVE);
 }
 
 void GpioLink::pulseDrop() {
-    gpiod_line_request_set_value(request_, dropLine_, GPIOD_LINE_VALUE_ACTIVE); 
+    if (!request_) return;
+    gpiod_line_request_set_value(request_, dropLine_, GPIOD_LINE_VALUE_ACTIVE);
     usleep(80000);
     gpiod_line_request_set_value(request_, dropLine_, GPIOD_LINE_VALUE_INACTIVE);
 }
 GpioLink::~GpioLink() {
-    gpiod_line_request_release(request_);
-    gpiod_chip_close(chip_);
+    if (request_) gpiod_line_request_release(request_);
+    if (chip_) gpiod_chip_close(chip_);
 }

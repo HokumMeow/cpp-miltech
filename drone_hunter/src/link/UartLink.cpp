@@ -1,14 +1,16 @@
 #include <fcntl.h>
 #include <termios.h>
 #include <unistd.h>
+#include <cerrno>
 #include <iostream>
 #include <link/UartLink.h>
 #include <thread>
 
 UartLink::UartLink(const std::string& port) {
-    fd_ = open(port.c_str(), O_RDWR | O_NOCTTY);
+    fd_ = open(port.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK);
     if (fd_ < 0) {
         std::cerr << "Failed to open serial port" << std::endl;
+        return;
     }
 
     termios tio;
@@ -37,8 +39,10 @@ void UartLink::run() {
         int n = read(fd_, buf, sizeof(buf));
 
         if (n < 0) {
+            if (errno != EAGAIN && errno != EWOULDBLOCK) {
+                std::cerr << "Error reading from serial port" << std::endl;
+            }
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
-            std::cerr << "Error reading from serial port" << std::endl;
             continue;
         } else {
             for (int i = 0; i < n; i++) {
@@ -92,6 +96,30 @@ dlink::AmmoCfg UartLink::getAmmoCfg() const {
 dlink::DroneCfg UartLink::getDroneCfg() const {
     std::lock_guard<std::mutex> lk(mtx_);
     return droneCfg_;
+}
+
+bool UartLink::isThreadReady() const {
+    return ready_.load();
+}
+
+void UartLink::start() {
+    started_.store(true);
+}
+
+void UartLink::stop() {
+    stopFlag_.store(true);
+}
+
+bool UartLink::hasAmmo() const {
+    return hasAmmo_.load();
+}
+
+bool UartLink::hasConfig() const {
+    return hasConfig_.load();
+}
+
+bool UartLink::hasTelemetry() const {
+    return hasTelemetry_.load();
 }
 
 UartLink::~UartLink() {

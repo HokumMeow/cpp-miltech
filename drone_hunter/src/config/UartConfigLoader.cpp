@@ -1,3 +1,4 @@
+#include <cstring>
 #include <thread>
 #include "config/UartConfigLoader.h"
 
@@ -22,6 +23,7 @@ void UartConfigLoader::load() {
     config_.turnThreshold = droneCfg.turnThreshold;
     config_.simTimeStep = droneCfg.timeStep;
     config_.timeScale = droneCfg.timeScale;
+    config_.arrayTimeStep = droneCfg.timeStep;  // не використовується UART-шляхом; ставимо безпечне значення
 
     ammoParams_.mass = ammoCfg.mass;
     ammoParams_.drag = ammoCfg.drag;

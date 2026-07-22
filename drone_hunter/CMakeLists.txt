@@ -15,6 +15,11 @@ target_include_directories(json INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 find_package(Threads REQUIRED)
 
+# ДЗ11: libgpiod (керування START/DROP через GpioLink) — та сама бібліотека
+# і той самий код на платі й у симуляції, шукаємо через pkg-config.
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GPIOD REQUIRED IMPORTED_TARGET libgpiod)
+
 # Виконуваний файл
 add_executable(drone_hunter
     src/main.cpp
@@ -22,9 +27,14 @@ add_executable(drone_hunter
     src/solvers/AnalyticalSolver.cpp
     src/solvers/TableSolver.cpp
     src/providers/ThreadSafeTargetProvider.cpp
+    src/providers/UartTargetProvider.cpp
     src/config/FileConfigLoader.cpp
+    src/config/UartConfigLoader.cpp
     src/MissionProcessor.cpp
     src/DronePhysics.cpp
+    src/engine/RemoteDronePhysics.cpp
+    src/link/UartLink.cpp
+    src/link/GpioLink.cpp
     src/states/StateStopped.cpp
     src/states/StateAccelerating.cpp
     src/states/StateDecelerating.cpp
@@ -33,6 +43,6 @@ add_executable(drone_hunter
 )
 
 target_include_directories(drone_hunter PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_link_libraries(drone_hunter PRIVATE json Threads::Threads)
+target_link_libraries(drone_hunter PRIVATE json Threads::Threads PkgConfig::GPIOD)
 
 target_compile_options(drone_hunter PRIVATE -Wall -Wextra -pedantic)

@@ -1,5 +1,7 @@
 #pragma once
 #include <atomic>
+#include <mutex>
+#include <vector>
 #include "interfaces/ITargetProvider.h"
 #include "link/UartLink.h"
 #include "dto/Target.h"

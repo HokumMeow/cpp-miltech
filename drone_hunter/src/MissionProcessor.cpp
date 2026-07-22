@@ -166,6 +166,7 @@ void MissionProcessor::run() {
         auto result = step();
         if (result.has_value()) {
             LOG("Hit! drop at (" << result->dropPoint->x << ", " << result->dropPoint->y << ")");
+            physics_.drop();
             break;
         }
         std::this_thread::sleep_for(std::chrono::duration<float>(config_.simTimeStep / config_.timeScale));
