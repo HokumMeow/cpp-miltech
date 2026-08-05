@@ -35,7 +35,6 @@ struct CliArgs {
     unsigned dropLine = 23;
 };
 
-// Повертає false, якщо аргументи некоректні (повідомлення вже надруковане).
 bool parseArgs(std::span<char*> args, CliArgs& out) {
     std::vector<std::string> positional;
     bool dataPathSet = false;
@@ -59,9 +58,6 @@ bool parseArgs(std::span<char*> args, CliArgs& out) {
         }
     }
 
-    // У локальному (JSON) режимі перший позиційний аргумент — шлях до даних,
-    // як і раніше. У режимі --uart шлях задається лише через --data, бо
-    // перший позиційний там зайнятий типом солвера.
     std::size_t solverIdx = 0;
     if (!out.remote && !dataPathSet && !positional.empty()) {
         out.dataPath = positional[0];
@@ -99,8 +95,6 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // Ці об'єкти мають пережити конструювання конфіг-лоадера/провайдера/фізики
-    // нижче (вони тримають лише посилання, а не володіють UartLink/GpioLink).
     std::unique_ptr<UartLink> uartLink;
     std::unique_ptr<GpioLink> gpioLink;
     std::thread uartThread;
@@ -108,9 +102,6 @@ int main(int argc, char* argv[]) {
     std::unique_ptr<IConfigLoader> loader;
 
     if (args.remote) {
-        // Хендшейк із чекером: спершу піднімаємо потік читання UART, потім
-        // START. Лише після START чекер починає слати AMMO/CONFIG/TELEMETRY,
-        // на які чекає UartConfigLoader::load() нижче.
         uartLink = std::make_unique<UartLink>(args.uartDev);
         uartThread = std::thread([&uartLink] { uartLink->run(); });
         while (!uartLink->isThreadReady()) {
