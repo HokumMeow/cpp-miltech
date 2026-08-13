@@ -39,7 +39,8 @@ void ThreadSafeTargetProvider::advance(float simTime) {
         int idx     = static_cast<int>(std::floor(simTime / arrayTimeStep_)) % timeSteps_;
         int nextIdx = (idx + 1) % timeSteps_;
 
-        updated[i].pos = trajectories_[i][idx];
+        float frac = fmod(simTime, arrayTimeStep_) / arrayTimeStep_;
+        updated[i].pos = trajectories_[i][idx] + (trajectories_[i][nextIdx] - trajectories_[i][idx]) * frac;
  
         updated[i].velocity.x = (trajectories_[i][nextIdx].x - trajectories_[i][idx].x) / arrayTimeStep_;
         updated[i].velocity.y = (trajectories_[i][nextIdx].y - trajectories_[i][idx].y) / arrayTimeStep_;
