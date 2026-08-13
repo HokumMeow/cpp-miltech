@@ -33,4 +33,7 @@ core.*
 # Метадані операційної системи не є частиною навчального репозиторію.
 .DS_Store
 Thumbs.db
+
 homework_12/edge/logs/c2.log
+homework_13/robot_ws/install
+homework_13/robot_ws/log

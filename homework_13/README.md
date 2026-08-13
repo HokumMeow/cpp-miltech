@@ -716,3 +716,98 @@ ros2 param list
 - фактичний результат `ros2 topic echo /actuator/status --once`;
 - висновок, чи команда пострілу через актуатор викликається тільки при
   `READY`.
+
+---
+
+## Рішення
+
+### Опис реалізованої системи
+
+В пакет `antidrone_turret` додано 3 нових ноди:
+`turret_controller_node`, `gimbal_driver_node`, `yaw_servo_driver_node`, і
+3 нови `.msg`-типа: `GimbalCommand`, `ServoCommand`, `TurretStatus`.
+
+Логіка с++ винесена в `include/antidrone_turret/turret_decision.hpp` 
+Ноди читають ROS 2 повідомлення, викликають цю логіку і перекладають результат назад у топіки/запит сервісу.
+
+### Схема системи
+
+```text
+tgt: target_track_publisher_node
+  --/perception/target (Target)--> ctrl: turret_controller_node
+
+ctrl /gimbal/cmd (GimbalCommand) -> gmb: gimbal_driver_node
+ctrl /servo/cmd (ServoCommand) ->  yaw: yaw_servo_driver_node
+ctrl сервіс /actuator/trigger (TriggerActuator) -> act: actuator_node
+act  /actuator/status (ActuatorStatus) -> ctrl
+ctrl публікує /turret/status (TurretStatus) -> CLI: ros2 topic echo
+```
+
+
+### Команди build/test
+
+```bash
+source /opt/ros/jazzy/setup.bash
+cd homework_13/robot_ws
+colcon build --symlink-install --packages-select antidrone_turret
+source install/setup.bash
+colcon test --packages-select antidrone_turret
+colcon test-result --verbose
+```
+
+Результат:
+
+```text
+Summary: 26 tests, 0 errors, 0 failures, 0 skipped
+```
+
+### Команда запуску
+
+```bash
+export ROS_LOCALHOST_ONLY=1
+ros2 launch antidrone_turret system.launch.py track:=approach_trigger.csv
+```
+
+`ROS_LOCALHOST_ONLY=1` виставлено додатково - у devcontainer DDS-discovery без цього прапорця 
+час від часу пропускає топікі
+
+
+### Фактичні результати `ros2 topic echo`
+
+`ros2 topic echo /actuator/status --once`:
+
+```text
+state: 1
+trigger_count: 6
+```
+
+`ros2 topic echo /turret/status --once`:
+
+```text
+target_state: 2
+action: 1
+trigger_state: 1
+confidence: 0.949999988079071
+distance_m: 16.0
+```
+
+`ros2 topic echo /gimbal/cmd --once`:
+
+```text
+direction: 1
+target_y: 190.0
+error_y: 50.0
+```
+
+`ros2 topic echo /servo/cmd --once`:
+
+```text
+direction: 1
+target_x: 390.0
+error_x: 70.0
+```
+
+### Висновок
+
+Команда пострілу викликається тоді, коли `turret_controller_node` бачить 
+`distance_m <= max_distance_m` **і** останній відомий стан актуатора - `READY`
