@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>robot_solution</name>
+  <version>0.1.0</version>
+  <description>Exploration and payload-action nodes for Homework 14 underground mapper.</description>
+
+  <maintainer email="hokkummeister@gmail.com">Andrew</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake_auto</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>underground_world</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
