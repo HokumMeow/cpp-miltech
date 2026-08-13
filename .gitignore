@@ -34,3 +34,5 @@ core.*
 .DS_Store
 Thumbs.db
 homework_12/edge/logs/c2.log
+
+test/*
