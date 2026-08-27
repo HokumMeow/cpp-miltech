@@ -1,12 +1,10 @@
 #pragma once
 #include "dto/Target.h"
+#include "interfaces/IThreadedComponent.h"
 
-class ITargetProvider {
+class ITargetProvider : public IThreadedComponent {
 public:
-    virtual int getTargetCount() = 0;
-    virtual int getTimeSteps() = 0;
-    virtual Target getTarget(int idx) = 0;
-    virtual void update(float time) {}
-    virtual Coord getPositionAt(int idx, float time) = 0;
-    virtual ~ITargetProvider() {}
+    virtual int getTargetCount() const = 0;
+    virtual Target getTarget(int idx) const = 0;
+    virtual ~ITargetProvider() override {}
 };

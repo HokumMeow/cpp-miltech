@@ -3,6 +3,9 @@ build/
 build-*/
 out/
 
+.cache
+
+test/
 # colcon (ROS 2) генерує ці директорії при кожному build у робочих просторах.
 install/
 log/
@@ -37,6 +40,8 @@ core.*
 # Метадані операційної системи не є частиною навчального репозиторію.
 .DS_Store
 Thumbs.db
+homework_12/edge/logs/c2.log
+.claude/settings.json
 
 homework_12/edge/logs/c2.log
 /tmp/
