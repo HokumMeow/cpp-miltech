@@ -6,6 +6,11 @@ out/
 .cache
 
 test/
+# colcon (ROS 2) генерує ці директорії при кожному build у робочих просторах.
+install/
+log/
+
+.cache
 
 # CMake генерує ці файли при in-source або ручних локальних збірках.
 CMakeCache.txt
@@ -37,3 +42,8 @@ core.*
 Thumbs.db
 homework_12/edge/logs/c2.log
 .claude/settings.json
+
+homework_12/edge/logs/c2.log
+/tmp/
+homework_13/robot_ws/install
+homework_13/robot_ws/log
