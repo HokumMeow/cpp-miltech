@@ -76,10 +76,10 @@ void MavlinkLink::sendTelemetry() {
     const auto latE7 = static_cast<int32_t>(lat * 1e7);
     const auto lonE7 = static_cast<int32_t>(lon * 1e7);
     const auto altMm = static_cast<int32_t>(altitude_ * 1000.f);
-    const auto vx = static_cast<int16_t>(tel.speed.x * 100.f);
-    const auto vy = static_cast<int16_t>(tel.speed.y * 100.f);
+    const auto vx = static_cast<int16_t>(tel.speed.y * 100.f);
+    const auto vy = static_cast<int16_t>(tel.speed.x * 100.f);
 
-    float hdgDeg = tel.direction * 180.f / kPi;
+    float hdgDeg = 90.f - tel.direction * 180.f / kPi;
     while (hdgDeg < 0.f) hdgDeg += 360.f;
     while (hdgDeg >= 360.f) hdgDeg -= 360.f;
     const auto hdg = static_cast<uint16_t>(hdgDeg * 100.f);
