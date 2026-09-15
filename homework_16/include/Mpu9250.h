@@ -16,6 +16,9 @@ constexpr std::size_t kMeasurementBlockSize = 14;
 // by default 
 constexpr float kAccelSensitivityLsbPerG = 16384.0f;
 constexpr float kGyroSensitivityLsbPerDps = 131.0f;
+// MPU-9250 datasheet: TEMP_degC = TEMP_OUT / 333.87 + 21 (differs from MPU-6050's 340/36.53)
+constexpr float kTempSensitivityLsbPerC = 333.87f;
+constexpr float kTempOffsetC = 21.0f;
 
 }  // namespace mpu9250
 
