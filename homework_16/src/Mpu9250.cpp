@@ -37,6 +37,6 @@ Mpu9250Measurement Mpu9250::readMeasurement() const {
     m.gyroX_dps = gyroX / mpu9250::kGyroSensitivityLsbPerDps;
     m.gyroY_dps = gyroY / mpu9250::kGyroSensitivityLsbPerDps;
     m.gyroZ_dps = gyroZ / mpu9250::kGyroSensitivityLsbPerDps;
-    m.temperatureC = temp / 340.0f + 36.53f;
+    m.temperatureC = temp / mpu9250::kTempSensitivityLsbPerC + mpu9250::kTempOffsetC;
     return m;
 }

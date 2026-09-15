@@ -39,11 +39,11 @@ int main(int argc, char* argv[]) {
 
     try {
         const uint8_t whoAmI = sensor.readWhoAmI();
-        if (isKnownMpu9250Id(whoAmI)) {
-            std::printf("WHO_AM_I = 0x%02X (MPU-9250 confirmed)\n", whoAmI);
-        } else {
-            std::printf("[warn] WHO_AM_I = 0x%02X, expected 0x71/0x73 — probably not the right device\n", whoAmI);
+        if (!isKnownMpu9250Id(whoAmI)) {
+            std::printf("[fatal] WHO_AM_I = 0x%02X, expected 0x71/0x73 — not an MPU-9250\n", whoAmI);
+            return 1;
         }
+        std::printf("WHO_AM_I = 0x%02X (MPU-9250 confirmed)\n", whoAmI);
         sensor.wake();
     } catch (const I2cError& e) {
         std::cerr << "[error] " << e.what() << std::endl;
