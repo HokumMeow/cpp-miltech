@@ -27,6 +27,13 @@ using json = nlohmann::json;
 
 namespace {
 
+constexpr const char* kReportBaseUrl = "http://cppmiltech.com.ua";
+constexpr const char* kReportApiKey = "dz12-vX7mK4qT9r2w";
+constexpr const char* kReportStudentId = "2028";
+constexpr int kReportMaxAttempts = 5;
+constexpr int kReportRetryDelaySec = 1;
+constexpr int kReportTimeoutSec = 2;
+
 struct CliArgs {
     std::string dataPath = "./data";
     SolverType solverType = SolverType::TABLE;
