@@ -20,6 +20,14 @@ find_package(Threads REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GPIOD REQUIRED IMPORTED_TARGET libgpiod)
 
+# mavlink/c_library_v2 (header-only)
+#   git clone --depth 1 https://github.com/mavlink/c_library_v2.git
+set(MAVLINK_DIR ${CMAKE_CURRENT_SOURCE_DIR}/c_library_v2)
+if(NOT EXISTS ${MAVLINK_DIR}/common/mavlink.h)
+    message(FATAL_ERROR "mavlink/c_library_v2 не знайдено в ${MAVLINK_DIR}. "
+                         "Клонуйте: git clone --depth 1 https://github.com/mavlink/c_library_v2.git ${MAVLINK_DIR}")
+endif()
+
 # Виконуваний файл
 add_executable(drone_hunter
     src/main.cpp
@@ -36,6 +44,7 @@ add_executable(drone_hunter
     src/link/UartLink.cpp
     src/link/GpioLink.cpp
     src/report/ResultReporter.cpp
+    src/telemetry/MavlinkLink.cpp
     src/states/StateStopped.cpp
     src/states/StateAccelerating.cpp
     src/states/StateDecelerating.cpp
@@ -44,6 +53,7 @@ add_executable(drone_hunter
 )
 
 target_include_directories(drone_hunter PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(drone_hunter SYSTEM PRIVATE ${MAVLINK_DIR})
 target_link_libraries(drone_hunter PRIVATE json Threads::Threads PkgConfig::GPIOD)
 
 target_compile_options(drone_hunter PRIVATE -Wall -Wextra -pedantic)

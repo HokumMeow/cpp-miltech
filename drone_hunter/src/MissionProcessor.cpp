@@ -9,6 +9,7 @@
 #include "interfaces/IDronePhysics.h"
 #include "interfaces/ITargetProvider.h"
 #include "states/StateStopped.h"
+#include "telemetry/MavlinkLink.h"
 #include "json.hpp"
 #include "Log.h"
 
@@ -166,6 +167,9 @@ void MissionProcessor::run() {
         auto result = step();
         if (result.has_value()) {
             LOG("Hit! drop at (" << result->dropPoint->x << ", " << result->dropPoint->y << ")");
+            if (mavlink_) {
+                mavlink_->reportDrop(*result->dropPoint, config_.altitude);
+            }
             physics_.drop();
             break;
         }
