@@ -1,8 +1,11 @@
 #include <iostream>
 #include <cstring>
 #include <cmath>
+#include <fstream>
+#include <iomanip>
 #include <memory>
 #include <span>
+#include <sstream>
 #include <string>
 #include <thread>
 #include <chrono>
@@ -18,6 +21,7 @@
 #include "engine/Factory.h"
 #include "link/UartLink.h"
 #include "link/GpioLink.h"
+#include "report/ResultReporter.h"
 #include "Log.h"
 
 using namespace std;
@@ -53,22 +57,30 @@ void reportResult(const std::string& dataPath, int testNumber) {
     const std::string testId = formatTestId(testNumber);
     const std::string path = dataPath + "/simulation.json";
 
+    ResultReporter::Outcome outcome;
+    outcome.testId = testId;
+
     json simulation;
-    try {
-        std::ifstream fin(path);
-        if (!fin) {
-            std::cerr << "[report] не вдалося відкрити " << path << std::endl;
-            return;
+    bool fileOk = false;
+    std::ifstream fin(path);
+    if (!fin) {
+        outcome.status = ResultReporter::Status::FileMissing;
+        outcome.message = "не вдалося відкрити " + path;
+    } else {
+        try {
+            fin >> simulation;
+            fileOk = true;
+        } catch (const std::exception& e) {
+            outcome.status = ResultReporter::Status::FileMissing;
+            outcome.message = std::string("не вдалося розпарсити ") + path + ": " + e.what();
         }
-        fin >> simulation;
-    } catch (const std::exception& e) {
-        std::cerr << "[report] не вдалося розпарсити " << path << ": " << e.what() << std::endl;
-        return;
     }
 
-    ResultReporter reporter(kReportBaseUrl, kReportApiKey, kReportMaxAttempts,
-                             kReportRetryDelaySec, kReportTimeoutSec, kReportTimeoutSec);
-    auto outcome = reporter.reportTest(kReportStudentId, testId, simulation);
+    if (fileOk) {
+        ResultReporter reporter(kReportBaseUrl, kReportApiKey, kReportMaxAttempts,
+                                 kReportRetryDelaySec, kReportTimeoutSec, kReportTimeoutSec);
+        outcome = reporter.reportTest(kReportStudentId, testId, simulation);
+    }
 
     const char* statusLabel = "?";
     switch (outcome.status) {
@@ -106,6 +118,8 @@ bool parseArgs(std::span<char*> args, CliArgs& out) {
         } else if (arg == "--data" && i + 1 < args.size()) {
             out.dataPath = args[++i];
             dataPathSet = true;
+        } else if (arg == "--test" && i + 1 < args.size()) {
+            out.testNumber = std::stoi(args[++i]);
         } else {
             positional.push_back(arg);
         }
@@ -139,8 +153,8 @@ int main(int argc, char* argv[]) {
 
     if (kArgs.size() < 2) {
         LOG("using default data path: ./data\n");
-        LOG("usage: drone_hunter <data_path> [analytical|table]\n");
-        LOG("       drone_hunter --uart <dev> [--gpiochip <chip>] [--start-line <n>] [--drop-line <n>] [--data <path>] [analytical|table]\n");
+        LOG("usage: drone_hunter <data_path> [analytical|table] [--test <1..10>]\n");
+        LOG("       drone_hunter --uart <dev> [--gpiochip <chip>] [--start-line <n>] [--drop-line <n>] [--data <path>] [--test <1..10>] [analytical|table]\n");
     }
 
     CliArgs args;
@@ -233,6 +247,10 @@ int main(int argc, char* argv[]) {
     }
 
     mission.saveResults(args.dataPath);
+
+    if (args.testNumber != 0) {
+        reportResult(args.dataPath, args.testNumber);
+    }
 
     return 0;
 }
