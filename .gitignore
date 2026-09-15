@@ -9,6 +9,13 @@ log/
 
 .cache
 
+test/
+# colcon (ROS 2) генерує ці директорії при кожному build у робочих просторах.
+install/
+log/
+
+.cache
+
 # CMake генерує ці файли при in-source або ручних локальних збірках.
 CMakeCache.txt
 CMakeFiles/

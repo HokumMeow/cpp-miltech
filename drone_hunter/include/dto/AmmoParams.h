@@ -1,6 +1,7 @@
 #pragma once
+#include <string>
 struct AmmoParams {
-    char name[32];
+    std::string name;
     float mass;
     float drag;
     float lift;
