@@ -1,8 +1,11 @@
 #include <iostream>
 #include <cstring>
 #include <cmath>
+#include <fstream>
+#include <iomanip>
 #include <memory>
 #include <span>
+#include <sstream>
 #include <string>
 #include <thread>
 #include <chrono>
@@ -18,12 +21,20 @@
 #include "engine/Factory.h"
 #include "link/UartLink.h"
 #include "link/GpioLink.h"
+#include "report/ResultReporter.h"
 #include "Log.h"
 
 using namespace std;
 using json = nlohmann::json;
 
 namespace {
+
+constexpr const char* kReportBaseUrl = "http://cppmiltech.com.ua";
+constexpr const char* kReportApiKey = "dz12-vX7mK4qT9r2w";
+constexpr const char* kReportStudentId = "2028";
+constexpr int kReportMaxAttempts = 5;
+constexpr int kReportRetryDelaySec = 1;
+constexpr int kReportTimeoutSec = 2;
 
 struct CliArgs {
     std::string dataPath = "./data";
@@ -33,7 +44,61 @@ struct CliArgs {
     std::string gpiochip = "gpiochip1";
     unsigned startLine = 24;
     unsigned dropLine = 23;
+    int testNumber = 0;  // 0 = without reporting; otherwise 1..10 → T01..T10
 };
+
+std::string formatTestId(int n) {
+    std::ostringstream oss;
+    oss << 'T' << std::setw(2) << std::setfill('0') << n;
+    return oss.str();
+}
+
+void reportResult(const std::string& dataPath, int testNumber) {
+    const std::string testId = formatTestId(testNumber);
+    const std::string path = dataPath + "/simulation.json";
+
+    ResultReporter::Outcome outcome;
+    outcome.testId = testId;
+
+    json simulation;
+    bool fileOk = false;
+    std::ifstream fin(path);
+    if (!fin) {
+        outcome.status = ResultReporter::Status::FileMissing;
+        outcome.message = "не вдалося відкрити " + path;
+    } else {
+        try {
+            fin >> simulation;
+            fileOk = true;
+        } catch (const std::exception& e) {
+            outcome.status = ResultReporter::Status::FileMissing;
+            outcome.message = std::string("не вдалося розпарсити ") + path + ": " + e.what();
+        }
+    }
+
+    if (fileOk) {
+        ResultReporter reporter(kReportBaseUrl, kReportApiKey, kReportMaxAttempts,
+                                 kReportRetryDelaySec, kReportTimeoutSec, kReportTimeoutSec);
+        outcome = reporter.reportTest(kReportStudentId, testId, simulation);
+    }
+
+    const char* statusLabel = "?";
+    switch (outcome.status) {
+        case ResultReporter::Status::Success:     statusLabel = "OK"; break;
+        case ResultReporter::Status::Unverified:  statusLabel = "OK (не підтверджено GET)"; break;
+        case ResultReporter::Status::ClientError: statusLabel = "ПОМИЛКА ДАНИХ"; break;
+        case ResultReporter::Status::ServerError: statusLabel = "НЕ ВДАЛОСЯ (сервер)"; break;
+        case ResultReporter::Status::FileMissing: statusLabel = "ПРОПУЩЕНО"; break;
+    }
+
+    std::cout << "\n=== Звіт постингу результатів ===\n"
+               << "Тест\tСпроби\tСтатус\n"
+               << outcome.testId << '\t' << outcome.attempts << '\t' << statusLabel;
+    if (outcome.status != ResultReporter::Status::Success && !outcome.message.empty()) {
+        std::cout << "  (" << outcome.message << ")";
+    }
+    std::cout << std::endl;
+}
 
 bool parseArgs(std::span<char*> args, CliArgs& out) {
     std::vector<std::string> positional;
@@ -53,6 +118,8 @@ bool parseArgs(std::span<char*> args, CliArgs& out) {
         } else if (arg == "--data" && i + 1 < args.size()) {
             out.dataPath = args[++i];
             dataPathSet = true;
+        } else if (arg == "--test" && i + 1 < args.size()) {
+            out.testNumber = std::stoi(args[++i]);
         } else {
             positional.push_back(arg);
         }
@@ -86,8 +153,8 @@ int main(int argc, char* argv[]) {
 
     if (kArgs.size() < 2) {
         LOG("using default data path: ./data\n");
-        LOG("usage: drone_hunter <data_path> [analytical|table]\n");
-        LOG("       drone_hunter --uart <dev> [--gpiochip <chip>] [--start-line <n>] [--drop-line <n>] [--data <path>] [analytical|table]\n");
+        LOG("usage: drone_hunter <data_path> [analytical|table] [--test <1..10>]\n");
+        LOG("       drone_hunter --uart <dev> [--gpiochip <chip>] [--start-line <n>] [--drop-line <n>] [--data <path>] [--test <1..10>] [analytical|table]\n");
     }
 
     CliArgs args;
@@ -180,6 +247,10 @@ int main(int argc, char* argv[]) {
     }
 
     mission.saveResults(args.dataPath);
+
+    if (args.testNumber != 0) {
+        reportResult(args.dataPath, args.testNumber);
+    }
 
     return 0;
 }

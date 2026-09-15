@@ -35,6 +35,7 @@ add_executable(drone_hunter
     src/engine/RemoteDronePhysics.cpp
     src/link/UartLink.cpp
     src/link/GpioLink.cpp
+    src/report/ResultReporter.cpp
     src/states/StateStopped.cpp
     src/states/StateAccelerating.cpp
     src/states/StateDecelerating.cpp
