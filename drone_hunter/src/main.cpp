@@ -25,6 +25,13 @@ using json = nlohmann::json;
 
 namespace {
 
+constexpr const char* kReportBaseUrl = "http://cppmiltech.com.ua";
+constexpr const char* kReportApiKey = "dz12-vX7mK4qT9r2w";
+constexpr const char* kReportStudentId = "2028";
+constexpr int kReportMaxAttempts = 5;
+constexpr int kReportRetryDelaySec = 1;
+constexpr int kReportTimeoutSec = 2;
+
 struct CliArgs {
     std::string dataPath = "./data";
     SolverType solverType = SolverType::TABLE;
@@ -33,7 +40,53 @@ struct CliArgs {
     std::string gpiochip = "gpiochip1";
     unsigned startLine = 24;
     unsigned dropLine = 23;
+    int testNumber = 0;  // 0 = without reporting; otherwise 1..10 → T01..T10
 };
+
+std::string formatTestId(int n) {
+    std::ostringstream oss;
+    oss << 'T' << std::setw(2) << std::setfill('0') << n;
+    return oss.str();
+}
+
+void reportResult(const std::string& dataPath, int testNumber) {
+    const std::string testId = formatTestId(testNumber);
+    const std::string path = dataPath + "/simulation.json";
+
+    json simulation;
+    try {
+        std::ifstream fin(path);
+        if (!fin) {
+            std::cerr << "[report] не вдалося відкрити " << path << std::endl;
+            return;
+        }
+        fin >> simulation;
+    } catch (const std::exception& e) {
+        std::cerr << "[report] не вдалося розпарсити " << path << ": " << e.what() << std::endl;
+        return;
+    }
+
+    ResultReporter reporter(kReportBaseUrl, kReportApiKey, kReportMaxAttempts,
+                             kReportRetryDelaySec, kReportTimeoutSec, kReportTimeoutSec);
+    auto outcome = reporter.reportTest(kReportStudentId, testId, simulation);
+
+    const char* statusLabel = "?";
+    switch (outcome.status) {
+        case ResultReporter::Status::Success:     statusLabel = "OK"; break;
+        case ResultReporter::Status::Unverified:  statusLabel = "OK (не підтверджено GET)"; break;
+        case ResultReporter::Status::ClientError: statusLabel = "ПОМИЛКА ДАНИХ"; break;
+        case ResultReporter::Status::ServerError: statusLabel = "НЕ ВДАЛОСЯ (сервер)"; break;
+        case ResultReporter::Status::FileMissing: statusLabel = "ПРОПУЩЕНО"; break;
+    }
+
+    std::cout << "\n=== Звіт постингу результатів ===\n"
+               << "Тест\tСпроби\tСтатус\n"
+               << outcome.testId << '\t' << outcome.attempts << '\t' << statusLabel;
+    if (outcome.status != ResultReporter::Status::Success && !outcome.message.empty()) {
+        std::cout << "  (" << outcome.message << ")";
+    }
+    std::cout << std::endl;
+}
 
 bool parseArgs(std::span<char*> args, CliArgs& out) {
     std::vector<std::string> positional;
