@@ -14,6 +14,7 @@ class ITargetProvider;
 class IDronePhysics;
 class IBallisticSolver;
 class IConfigLoader;
+class MavlinkLink;
 
 class MissionProcessor {
 public:
@@ -21,11 +22,13 @@ public:
         std::unique_ptr<IBallisticSolver> s,
         std::unique_ptr<IConfigLoader> c,
         ITargetProvider& targets,
-        IDronePhysics& physics)
+        IDronePhysics& physics,
+        MavlinkLink* mavlink = nullptr)
         : solver_(std::move(s)),
           loader_(std::move(c)),
           targets_(targets),
-          physics_(physics) {}
+          physics_(physics),
+          mavlink_(mavlink) {}
 
     void init();
     bool hasNext() const { return !targetHit_ && simStep.size() < MAX_STEPS; }
@@ -41,6 +44,7 @@ private:
     std::unique_ptr<IConfigLoader> loader_;
     ITargetProvider& targets_;
     IDronePhysics& physics_;
+    MavlinkLink* mavlink_;
     std::unique_ptr<IDroneState> state_;
     DroneContext ctx_;
     AmmoParams ammo_;

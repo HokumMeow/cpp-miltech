@@ -3,6 +3,9 @@ build/
 build-*/
 out/
 
+# mavlink/c_library_v2
+drone_hunter/c_library_v2/
+
 .cache
 
 test/
