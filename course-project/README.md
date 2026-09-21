@@ -36,17 +36,19 @@ LINK_LOST --(мовчить >= 3 с)--> CLIMB --(набрали 30 м над д�
 
 ## Збірка і запуск
 
-Програма збирається з кореня репо:
+Програма і тести збираються з кореня репо:
 
 ```bash
 # один раз: root CMake збирає і drone_hunter з ДЗ, а той вимагає mavlink
 git clone --depth 1 https://github.com/mavlink/c_library_v2.git drone_hunter/c_library_v2
 
 cmake --preset debug
-cmake --build --preset debug --target rth_app
+cmake --build --preset debug --target rth_app rth_tests
+./build/debug/course-project/rth_tests
 ```
 
-Або можна зібрати окремо від репозиторію: `cmake -S course-project -B build/course`.
+Або можна зібрати окремо від репозиторію: `cmake -S course-project -B build/course`. Тоді
+GoogleTest нізвідки взяти, CMake друкує `rth_tests пропущено` і збирає лише `rth_app`.
 
 **На ПК (з файлов без реальних датчиків):**
 

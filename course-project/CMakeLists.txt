@@ -31,3 +31,23 @@ target_compile_options(rth_lib PRIVATE -Wall -Wextra -pedantic)
 add_executable(rth_app src/main.cpp)
 target_link_libraries(rth_app PRIVATE rth_lib)
 target_compile_options(rth_app PRIVATE -Wall -Wextra -pedantic)
+
+# Тести потребують GoogleTest, який підключає root CMakeLists.txt
+if(NOT CMAKE_CROSSCOMPILING AND TARGET GTest::gtest_main)
+    include(GoogleTest)
+    add_executable(rth_tests
+        tests/geo_tests.cpp
+        tests/attitude_tests.cpp
+        tests/nmea_tests.cpp
+        tests/bmp388_tests.cpp
+        tests/mpu9250_tests.cpp
+        tests/failsafe_tests.cpp
+        tests/nav_tests.cpp
+        tests/replay_logger_tests.cpp
+    )
+    target_link_libraries(rth_tests PRIVATE rth_lib GTest::gtest_main)
+    gtest_discover_tests(rth_tests DISCOVERY_MODE PRE_TEST)
+else()
+    # При збірці напряму з цієї директорії GoogleTest ніхто не підключив - тестів просто не буде
+    message(STATUS "rth_tests пропущено: GoogleTest недоступний")
+endif()
