@@ -1,0 +1,39 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Configure (arm-none-eabi)",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "-S", "${workspaceFolder}",
+        "-B", "${workspaceFolder}/build-firmware",
+        "-G", "Ninja",
+        "--toolchain", "${workspaceFolder}/../../cmake/toolchains/arm-none-eabi-stm32f4.cmake",
+        "-DCMAKE_BUILD_TYPE=Release"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Build",
+      "type": "shell",
+      "command": "cmake",
+      "args": ["--build", "${workspaceFolder}/build-firmware"],
+      "group": { "kind": "build", "isDefault": true },
+      "dependsOn": ["Configure (arm-none-eabi)"],
+      "problemMatcher": ["$gcc"]
+    },
+    {
+      "label": "Flash (ST-LINK)",
+      "type": "shell",
+      "command": "STM32_Programmer_CLI",
+      "args": [
+        "-c", "port=SWD", "mode=UR",
+        "-w", "${workspaceFolder}/build-firmware/hw18_firmware.elf",
+        "-v", "-rst"
+      ],
+      "dependsOn": ["Build"],
+      "problemMatcher": []
+    }
+  ]
+}
