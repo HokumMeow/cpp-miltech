@@ -48,3 +48,7 @@ homework_12/edge/logs/c2.log
 /tmp/
 
 test/*
+
+# mavlink/c_library_v2 - зовнішня header-only бібліотека для drone_hunter,
+# підтягується окремо (git clone), у репо не комітиться.
+drone_hunter/c_library_v2/
